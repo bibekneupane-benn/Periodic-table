@@ -1,0 +1,3266 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Benn Periodic Table Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+<style>
+/* ============================================================
+   style.css — Benn Periodic Table Explorer
+   Developer: Bibek Neupane (Benn)
+   ============================================================ */
+
+/* ── 1. CUSTOM PROPERTIES ─────────────────────────────────── */
+:root {
+  --font: 'Poppins', sans-serif;
+
+  /* Spacing */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 40px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  /* Transition */
+  --tr: 0.22s ease;
+  --tr-slow: 0.4s ease;
+
+  /* Category colours (shared light/dark) */
+  --c-alkali:       #ef4444;
+  --c-alkaline:     #f97316;
+  --c-transition:   #eab308;
+  --c-post:         #84cc16;
+  --c-metalloid:    #22c55e;
+  --c-nonmetal:     #06b6d4;
+  --c-halogen:      #818cf8;
+  --c-noble:        #a855f7;
+  --c-lanthanide:   #ec4899;
+  --c-actinide:     #f43f5e;
+}
+
+/* ── DARK THEME (default) ─────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:           #0b0d14;
+  --bg2:          #11141f;
+  --bg3:          #171b2d;
+  --surface:      rgba(255,255,255,0.04);
+  --surface-h:    rgba(255,255,255,0.08);
+  --border:       rgba(255,255,255,0.08);
+  --border-h:     rgba(255,255,255,0.18);
+  --txt:          #e8eaf6;
+  --txt2:         #9ca3af;
+  --txt3:         #6b7280;
+  --accent:       #6366f1;
+  --accent2:      #818cf8;
+  --glow:         rgba(99,102,241,0.25);
+  --modal-bg:     #13172a;
+  --shadow:       0 8px 40px rgba(0,0,0,0.6);
+  --shadow-sm:    0 2px 12px rgba(0,0,0,0.4);
+  --glass:        rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.1);
+}
+
+/* ── LIGHT THEME ──────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:           #f0f2fb;
+  --bg2:          #e8ebf8;
+  --bg3:          #ffffff;
+  --surface:      rgba(255,255,255,0.7);
+  --surface-h:    rgba(255,255,255,0.95);
+  --border:       rgba(0,0,0,0.08);
+  --border-h:     rgba(0,0,0,0.16);
+  --txt:          #1e2044;
+  --txt2:         #4b5563;
+  --txt3:         #9ca3af;
+  --accent:       #4f46e5;
+  --accent2:      #6366f1;
+  --glow:         rgba(79,70,229,0.18);
+  --modal-bg:     #ffffff;
+  --shadow:       0 8px 40px rgba(79,70,229,0.12);
+  --shadow-sm:    0 2px 12px rgba(0,0,0,0.08);
+  --glass:        rgba(255,255,255,0.65);
+  --glass-border: rgba(255,255,255,0.9);
+}
+
+/* ── 2. RESET & BASE ──────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100vh;
+  transition: background var(--tr-slow), color var(--tr-slow);
+  overflow-x: hidden;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+input {
+  font-family: var(--font);
+}
+
+/* ── 3. LOADER ────────────────────────────────────────────── */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-lg);
+}
+
+.loader-atom {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.nucleus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent2), var(--accent));
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(99,102,241,0.35);
+  transform-origin: center;
+}
+
+.orbit-1 {
+  width: 50px; height: 50px;
+  margin: -25px 0 0 -25px;
+  animation: spin 1.2s linear infinite;
+}
+
+.orbit-2 {
+  width: 75px; height: 75px;
+  margin: -37.5px 0 0 -37.5px;
+  animation: spin 2s linear infinite reverse;
+  transform: rotate(60deg);
+}
+
+.orbit-3 {
+  width: 100px; height: 100px;
+  margin: -50px 0 0 -50px;
+  animation: spin 2.8s linear infinite;
+  transform: rotate(-60deg);
+}
+
+.electron {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent2);
+  box-shadow: 0 0 8px var(--accent2);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  color: var(--txt2);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.dots {
+  animation: blink 1.4s step-start infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  33% { opacity: 0; }
+  66% { opacity: 0.5; }
+}
+
+/* ── 4. HEADER ────────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--tr-slow);
+}
+
+.header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--sp-md) var(--sp-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  box-shadow: 0 4px 15px var(--glow);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent2), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--txt2);
+  letter-spacing: 0.04em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt2);
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--tr);
+}
+
+.btn-icon:hover {
+  background: var(--surface-h);
+  border-color: var(--border-h);
+  color: var(--accent2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── 5. STATS BAR ─────────────────────────────────────────── */
+.stats-bar {
+  max-width: 1600px;
+  margin: var(--sp-xl) auto var(--sp-md);
+  padding: 0 var(--sp-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  backdrop-filter: blur(12px);
+}
+
+.stat-item {
+  padding: var(--sp-md) var(--sp-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-num {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent2), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.stat-lbl {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--txt2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── 6. ELEMENT OF THE DAY ────────────────────────────────── */
+.eotd-banner {
+  max-width: 1600px;
+  margin: 0 auto var(--sp-md);
+  padding: 0 var(--sp-xl);
+}
+
+.eotd-banner > * {
+  /* inner */
+}
+
+.eotd-banner {
+  position: relative;
+}
+
+.eotd-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: var(--sp-xl); right: var(--sp-xl);
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08));
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  pointer-events: none;
+}
+
+.eotd-label {
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: var(--sp-md) var(--sp-xl) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.eotd-content {
+  position: relative;
+  padding: var(--sp-md) var(--sp-xl) var(--sp-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-lg);
+  flex-wrap: wrap;
+}
+
+.eotd-symbol {
+  font-size: 52px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent2), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  min-width: 70px;
+  text-align: center;
+}
+
+.eotd-info {
+  flex: 1;
+  min-width: 180px;
+}
+
+.eotd-info h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--txt);
+  margin-bottom: 4px;
+}
+
+.eotd-info p {
+  font-size: 14px;
+  color: var(--txt2);
+  line-height: 1.5;
+}
+
+.btn-eotd {
+  padding: 10px 22px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  transition: all var(--tr);
+  box-shadow: 0 4px 15px var(--glow);
+  flex-shrink: 0;
+}
+
+.btn-eotd:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--glow);
+  filter: brightness(1.1);
+}
+
+/* ── 7. CONTROLS ──────────────────────────────────────────── */
+.controls-section {
+  max-width: 1600px;
+  margin: 0 auto var(--sp-md);
+  padding: 0 var(--sp-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  font-size: 16px;
+  color: var(--txt3);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 48px 14px 46px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt);
+  font-size: 15px;
+  font-weight: 400;
+  transition: all var(--tr);
+  backdrop-filter: blur(12px);
+}
+
+.search-input::placeholder {
+  color: var(--txt3);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-h);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+.btn-clear-search {
+  position: absolute;
+  right: 14px;
+  color: var(--txt3);
+  font-size: 18px;
+  transition: color var(--tr);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-clear-search.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-clear-search:hover {
+  color: var(--accent2);
+}
+
+.filter-scroll {
+  display: flex;
+  gap: var(--sp-sm);
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--tr);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent2);
+  background: var(--surface-h);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 12px var(--glow);
+}
+
+/* ── 8. PERIODIC TABLE GRID ───────────────────────────────── */
+.table-section {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--sp-xl);
+}
+
+.table-scroll-wrap {
+  overflow-x: auto;
+  padding-bottom: var(--sp-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.table-scroll-wrap::-webkit-scrollbar {
+  height: 5px;
+}
+.table-scroll-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-h);
+  border-radius: 99px;
+}
+
+.periodic-grid {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(64px, 1fr));
+  grid-template-rows: 28px repeat(7, minmax(64px, 1fr)) 24px 28px repeat(2, minmax(64px, 1fr));
+  gap: 4px;
+  min-width: 1200px;
+}
+
+/* Group / period labels */
+.group-label,
+.period-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.04em;
+}
+
+/* Placeholder boxes (57-71, 89-103) */
+.series-placeholder {
+  grid-row: span 1;
+  border-radius: var(--r-sm);
+  border: 1.5px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt3);
+  gap: 2px;
+  padding: 4px;
+}
+
+.series-placeholder small {
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.lanthanide-ph { border-color: rgba(236,72,153,0.3); color: rgba(236,72,153,0.6); }
+.actinide-ph   { border-color: rgba(244,63,94,0.3);  color: rgba(244,63,94,0.6); }
+
+/* ── ELEMENT CARD ─────────────────────────────────────────── */
+.element-card {
+  position: relative;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 5px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all var(--tr);
+  user-select: none;
+  overflow: hidden;
+  min-height: 64px;
+}
+
+.element-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cat-color, var(--accent));
+  opacity: 0.12;
+  transition: opacity var(--tr);
+  border-radius: inherit;
+}
+
+.element-card:hover::before {
+  opacity: 0.25;
+}
+
+.element-card:hover {
+  border-color: var(--cat-color, var(--accent));
+  transform: scale(1.12) translateY(-3px);
+  z-index: 10;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1.5px var(--cat-color, var(--accent));
+}
+
+.element-card.highlighted {
+  border-color: var(--cat-color, var(--accent));
+  background: var(--surface-h);
+  box-shadow: 0 0 0 2px var(--cat-color, var(--accent)), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.element-card.dimmed {
+  opacity: 0.18;
+  transform: none !important;
+}
+
+.element-card.favorites-marked::after {
+  content: '♥';
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 8px;
+  color: #ef4444;
+  line-height: 1;
+}
+
+.el-number {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--txt3);
+  align-self: flex-start;
+  line-height: 1;
+  position: relative;
+}
+
+.el-symbol {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--cat-color, var(--txt));
+  line-height: 1;
+  position: relative;
+  filter: brightness(1.15);
+}
+
+.el-name {
+  font-size: 7.5px;
+  font-weight: 500;
+  color: var(--txt2);
+  text-align: center;
+  line-height: 1.1;
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.el-mass {
+  font-size: 7px;
+  font-weight: 400;
+  color: var(--txt3);
+  text-align: center;
+  position: relative;
+  line-height: 1;
+}
+
+/* Radioactive glow */
+.element-card.radioactive-card {
+  --glow-col: rgba(244, 63, 94, 0.2);
+}
+
+.element-card.radioactive-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: transparent;
+  border: 1px solid rgba(244,63,94,0.2);
+  pointer-events: none;
+}
+
+/* ── 9. SERIES ROWS (Lanthanides / Actinides) ─────────────── */
+.series-rows {
+  margin-top: var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.series-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.series-row::-webkit-scrollbar { display: none; }
+
+.series-row-label {
+  flex-shrink: 0;
+  min-width: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt2);
+  text-align: right;
+  padding-right: var(--sp-sm);
+  border-right: 2px solid var(--border);
+  line-height: 1.3;
+}
+
+.series-row-label small {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--txt3);
+}
+
+.series-row-cells {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Lanthanide / Actinide cards slightly tinted border */
+#lanthanide-cells .element-card { border-color: rgba(236,72,153,0.2); }
+#actinide-cells .element-card   { border-color: rgba(244,63,94,0.2); }
+
+/* ── 10. LEGEND ───────────────────────────────────────────── */
+.legend-section {
+  max-width: 1600px;
+  margin: var(--sp-lg) auto var(--sp-lg);
+  padding: 0 var(--sp-xl);
+}
+
+.legend-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt2);
+  margin-bottom: var(--sp-md);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.legend-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--txt2);
+  cursor: pointer;
+  transition: all var(--tr);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-item:hover {
+  border-color: var(--border-h);
+  background: var(--surface-h);
+  color: var(--txt);
+}
+
+.legend-item.active {
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ── 11. MODAL ────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-md);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  background: var(--modal-bg);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border-h);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  transform: scale(0.88) translateY(20px);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.modal-backdrop.open .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.modal-card::-webkit-scrollbar { width: 4px; }
+.modal-card::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 99px; }
+
+/* Modal Header */
+.modal-header {
+  padding: var(--sp-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-md);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--accent));
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.modal-symbol-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  min-width: 80px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.modal-atomic-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt3);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.modal-symbol {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--cat-color, var(--accent));
+  filter: brightness(1.15);
+}
+
+.modal-mass {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--txt3);
+  margin-top: 4px;
+}
+
+.modal-title-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.modal-element-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--txt);
+  line-height: 1.1;
+}
+
+.modal-category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--cat-color, var(--accent));
+  color: #fff;
+  align-self: flex-start;
+  opacity: 0.9;
+}
+
+.modal-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.state-badge,
+.natural-badge,
+.radioactive-badge {
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  color: var(--txt2);
+  background: var(--surface);
+}
+
+.radioactive-badge.active {
+  background: rgba(244,63,94,0.12);
+  border-color: rgba(244,63,94,0.4);
+  color: #f43f5e;
+}
+
+.modal-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  flex-shrink: 0;
+}
+
+.modal-btn-fav,
+.modal-btn-copy,
+.modal-btn-print,
+.modal-btn-close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt2);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--tr);
+}
+
+.modal-btn-fav:hover  { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,0.1); }
+.modal-btn-copy:hover { color: var(--accent2); border-color: var(--accent); background: var(--glow); }
+.modal-btn-print:hover { color: var(--accent2); border-color: var(--accent); background: var(--glow); }
+.modal-btn-close:hover { color: #ef4444; border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); }
+
+.modal-btn-fav.faved {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239,68,68,0.1);
+}
+
+/* Modal Body */
+.modal-body {
+  padding: var(--sp-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+/* Props Grid */
+.modal-props-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.prop-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color var(--tr);
+}
+
+.prop-card:hover {
+  border-color: var(--border-h);
+}
+
+.prop-icon {
+  font-size: 14px;
+  color: var(--accent2);
+}
+
+.prop-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--txt3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prop-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--txt);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Modal Sections */
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.modal-section-title i {
+  color: var(--accent2);
+  font-size: 15px;
+}
+
+.electron-config-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.04em;
+  font-family: 'Courier New', monospace;
+}
+
+.modal-text {
+  font-size: 14px;
+  color: var(--txt2);
+  line-height: 1.7;
+}
+
+.facts-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-md);
+}
+
+.facts-section .modal-section-title {
+  margin-bottom: 4px;
+}
+
+/* Modal Nav */
+.modal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding-top: var(--sp-sm);
+  border-top: 1px solid var(--border);
+}
+
+.modal-nav-btn {
+  padding: 9px 20px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt2);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--tr);
+}
+
+.modal-nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent2);
+  background: var(--glow);
+}
+
+.modal-nav-counter {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt3);
+}
+
+/* ── 12. SHORTCUTS PANEL ──────────────────────────────────── */
+.shortcuts-panel {
+  position: fixed;
+  bottom: 80px;
+  right: var(--sp-lg);
+  background: var(--modal-bg);
+  border: 1px solid var(--border-h);
+  border-radius: var(--r-lg);
+  padding: var(--sp-md) var(--sp-lg);
+  z-index: 200;
+  box-shadow: var(--shadow);
+  min-width: 240px;
+  transform: translateY(12px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+
+.shortcuts-panel.open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.shortcuts-panel h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt);
+  margin-bottom: var(--sp-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.shortcuts-panel ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.shortcuts-panel li {
+  font-size: 13px;
+  color: var(--txt2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--surface-h);
+  border: 1px solid var(--border-h);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font);
+  color: var(--accent2);
+  min-width: 26px;
+}
+
+.btn-shortcuts {
+  position: fixed;
+  bottom: var(--sp-lg);
+  right: var(--sp-lg);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  color: #fff;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px var(--glow);
+  z-index: 201;
+  transition: all var(--tr);
+}
+
+.btn-shortcuts:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 28px var(--glow);
+}
+
+/* ── 13. TOAST ────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--modal-bg);
+  border: 1px solid var(--border-h);
+  border-radius: var(--r-md);
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt);
+  box-shadow: var(--shadow);
+  z-index: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── 14. FOOTER ───────────────────────────────────────────── */
+.site-footer {
+  text-align: center;
+  padding: var(--sp-xl) var(--sp-md);
+  border-top: 1px solid var(--border);
+  margin-top: var(--sp-xl);
+}
+
+.site-footer p {
+  font-size: 13px;
+  color: var(--txt2);
+  line-height: 1.7;
+}
+
+.site-footer strong {
+  background: linear-gradient(135deg, var(--accent2), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-sub {
+  font-size: 11px;
+  color: var(--txt3);
+}
+
+/* ── 15. PRINT ────────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden; }
+  .modal-card, .modal-card * { visibility: visible; }
+  .modal-backdrop { position: static; background: none; backdrop-filter: none; }
+  .modal-card {
+    position: static;
+    box-shadow: none;
+    border: none;
+    max-height: none;
+    transform: none;
+  }
+  .modal-btn-fav, .modal-btn-copy, .modal-btn-print, .modal-btn-close,
+  .modal-nav { display: none; }
+}
+
+/* ── 16. RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .header-inner,
+  .stats-bar,
+  .eotd-banner,
+  .controls-section,
+  .table-section,
+  .legend-section {
+    padding-left: var(--sp-md);
+    padding-right: var(--sp-md);
+  }
+
+  .eotd-banner::before {
+    left: var(--sp-md);
+    right: var(--sp-md);
+  }
+
+  .eotd-label {
+    padding-left: var(--sp-md);
+  }
+
+  .eotd-content {
+    padding-left: var(--sp-md);
+    padding-right: var(--sp-md);
+  }
+
+  .stat-item { padding: var(--sp-md) var(--sp-md); }
+  .stat-num  { font-size: 22px; }
+}
+
+@media (max-width: 720px) {
+  .brand-sub    { display: none; }
+  .stat-divider { display: none; }
+  .stats-bar {
+    gap: 0;
+    border-radius: var(--r-md);
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .stats-bar::-webkit-scrollbar { display: none; }
+  .stat-item { padding: var(--sp-sm) var(--sp-md); }
+  .stat-num  { font-size: 18px; }
+  .stat-lbl  { font-size: 9px; }
+
+  .modal-props-grid { grid-template-columns: repeat(2, 1fr); }
+  .modal-element-name { font-size: 20px; }
+  .modal-symbol { font-size: 32px; }
+
+  .eotd-symbol { font-size: 36px; }
+  .eotd-info h2 { font-size: 17px; }
+
+  .btn-shortcuts, .shortcuts-panel { right: var(--sp-md); }
+  .toast { font-size: 13px; padding: 9px 16px; }
+}
+
+@media (max-width: 480px) {
+  .header-inner { padding: var(--sp-sm) var(--sp-md); }
+  .modal-header { flex-wrap: wrap; }
+  .modal-header-actions { flex-direction: row; }
+  .modal-card { border-radius: var(--r-lg); }
+  .series-row-label { min-width: 70px; font-size: 10px; }
+}
+
+/* ── 17. UTILITY ANIMATIONS ───────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ripple {
+  to { transform: scale(3); opacity: 0; }
+}
+
+.element-card {
+  animation: fadeInUp 0.3s ease both;
+}
+
+/* Ripple effect on click */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  background: rgba(255,255,255,0.25);
+  transform: scale(0);
+  animation: ripple 0.5s linear;
+  pointer-events: none;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── 18. SCROLLBAR (global, webkit) ───────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--txt3); }
+
+/* ── 19. SELECTION ────────────────────────────────────────── */
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── 20. FOCUS-VISIBLE accessibility ──────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="loader-atom">
+        <div class="nucleus"></div>
+        <div class="orbit orbit-1"><div class="electron"></div></div>
+        <div class="orbit orbit-2"><div class="electron"></div></div>
+        <div class="orbit orbit-3"><div class="electron"></div></div>
+      </div>
+      <p class="loader-text">Loading Elements<span class="dots">...</span></p>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+        <div class="brand-text">
+          <span class="brand-name">Benn</span>
+          <span class="brand-sub">Periodic Table Explorer</span>
+        </div>
+      </div>
+      <nav class="header-actions">
+        <button id="btn-random" class="btn-icon" title="Random Element (R)"><i class="bi bi-shuffle"></i></button>
+        <button id="btn-fullscreen" class="btn-icon" title="Fullscreen (F)"><i class="bi bi-fullscreen"></i></button>
+        <button id="btn-theme" class="btn-icon" title="Toggle Theme (T)"><i class="bi bi-moon-stars-fill"></i></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <section class="stats-bar" id="stats-bar">
+      <div class="stat-item"><span class="stat-num" id="stat-total">118</span><span class="stat-lbl">Elements</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num" id="stat-metals">91</span><span class="stat-lbl">Metals</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num" id="stat-nonmetals">17</span><span class="stat-lbl">Nonmetals</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num" id="stat-metalloids">7</span><span class="stat-lbl">Metalloids</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num" id="stat-radioactive">38</span><span class="stat-lbl">Radioactive</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num" id="stat-synthetic">24</span><span class="stat-lbl">Synthetic</span></div>
+    </section>
+
+    <section class="eotd-banner" id="eotd-banner">
+      <div class="eotd-label"><i class="bi bi-stars"></i> Element of the Day</div>
+      <div class="eotd-content">
+        <div class="eotd-symbol" id="eotd-symbol">Au</div>
+        <div class="eotd-info">
+          <h2 id="eotd-name">Gold</h2>
+          <p id="eotd-fact">Most malleable metal.</p>
+        </div>
+        <button class="btn-eotd" id="btn-eotd-view">View Details <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
+
+    <section class="controls-section">
+      <div class="search-wrap">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" id="search-input" class="search-input" placeholder="Search by name, symbol or atomic number…" autocomplete="off" spellcheck="false"/>
+        <button class="btn-clear-search" id="btn-clear-search"><i class="bi bi-x-circle-fill"></i></button>
+      </div>
+      <div class="filter-scroll">
+        <button class="filter-btn active" data-filter="all"><i class="bi bi-grid-fill"></i> All</button>
+        <button class="filter-btn" data-filter="alkali-metal">Alkali Metals</button>
+        <button class="filter-btn" data-filter="alkaline-earth-metal">Alkaline Earth</button>
+        <button class="filter-btn" data-filter="transition-metal">Transition Metals</button>
+        <button class="filter-btn" data-filter="lanthanide">Lanthanides</button>
+        <button class="filter-btn" data-filter="actinide">Actinides</button>
+        <button class="filter-btn" data-filter="post-transition-metal">Post-transition</button>
+        <button class="filter-btn" data-filter="metalloid">Metalloids</button>
+        <button class="filter-btn" data-filter="nonmetal">Nonmetals</button>
+        <button class="filter-btn" data-filter="halogen">Halogens</button>
+        <button class="filter-btn" data-filter="noble-gas">Noble Gases</button>
+        <button class="filter-btn" data-filter="radioactive"><i class="bi bi-radioactive"></i> Radioactive</button>
+        <button class="filter-btn" data-filter="synthetic">Synthetic</button>
+        <button class="filter-btn" data-filter="favorites"><i class="bi bi-heart-fill"></i> Favorites</button>
+      </div>
+    </section>
+
+    <section class="table-section">
+      <div class="table-scroll-wrap">
+        <div class="periodic-grid" id="periodic-grid">
+          <div class="period-label" style="grid-column:1;grid-row:2;">2</div>
+          <div class="period-label" style="grid-column:1;grid-row:3;">3</div>
+          <div class="period-label" style="grid-column:1;grid-row:4;">4</div>
+          <div class="period-label" style="grid-column:1;grid-row:5;">5</div>
+          <div class="period-label" style="grid-column:1;grid-row:6;">6</div>
+          <div class="period-label" style="grid-column:1;grid-row:7;">7</div>
+          <div class="group-label" style="grid-column:1;grid-row:1;">1</div>
+          <div class="group-label" style="grid-column:2;grid-row:1;">2</div>
+          <div class="group-label" style="grid-column:3;grid-row:1;">3</div>
+          <div class="group-label" style="grid-column:4;grid-row:1;">4</div>
+          <div class="group-label" style="grid-column:5;grid-row:1;">5</div>
+          <div class="group-label" style="grid-column:6;grid-row:1;">6</div>
+          <div class="group-label" style="grid-column:7;grid-row:1;">7</div>
+          <div class="group-label" style="grid-column:8;grid-row:1;">8</div>
+          <div class="group-label" style="grid-column:9;grid-row:1;">9</div>
+          <div class="group-label" style="grid-column:10;grid-row:1;">10</div>
+          <div class="group-label" style="grid-column:11;grid-row:1;">11</div>
+          <div class="group-label" style="grid-column:12;grid-row:1;">12</div>
+          <div class="group-label" style="grid-column:13;grid-row:1;">13</div>
+          <div class="group-label" style="grid-column:14;grid-row:1;">14</div>
+          <div class="group-label" style="grid-column:15;grid-row:1;">15</div>
+          <div class="group-label" style="grid-column:16;grid-row:1;">16</div>
+          <div class="group-label" style="grid-column:17;grid-row:1;">17</div>
+          <div class="group-label" style="grid-column:18;grid-row:1;">18</div>
+          <div class="series-placeholder lanthanide-ph" style="grid-column:3;grid-row:6;"><span>57–71</span><small>Lanthanides</small></div>
+          <div class="series-placeholder actinide-ph" style="grid-column:3;grid-row:7;"><span>89–103</span><small>Actinides</small></div>
+        </div>
+      </div>
+      <div class="series-rows">
+        <div class="series-row" id="lanthanide-row">
+          <div class="series-row-label">Lanthanides<br/><small>57 → 71</small></div>
+          <div class="series-row-cells" id="lanthanide-cells"></div>
+        </div>
+        <div class="series-row" id="actinide-row">
+          <div class="series-row-label">Actinides<br/><small>89 → 103</small></div>
+          <div class="series-row-cells" id="actinide-cells"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="legend-section">
+      <h3 class="legend-title"><i class="bi bi-palette2"></i> Element Categories</h3>
+      <div class="legend-grid" id="legend-grid"></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-card" id="modal-card">
+      <div class="modal-header" id="modal-header">
+        <div class="modal-symbol-wrap">
+          <div class="modal-atomic-num" id="modal-atomic-num">79</div>
+          <div class="modal-symbol" id="modal-symbol">Au</div>
+          <div class="modal-mass" id="modal-mass">196.97</div>
+        </div>
+        <div class="modal-title-block">
+          <h2 class="modal-element-name" id="modal-element-name">Gold</h2>
+          <span class="modal-category-badge" id="modal-category-badge">Transition Metal</span>
+          <div class="modal-meta-row">
+            <span id="modal-state-badge" class="state-badge"></span>
+            <span id="modal-natural-badge" class="natural-badge"></span>
+            <span id="modal-radioactive-badge" class="radioactive-badge"></span>
+          </div>
+        </div>
+        <div class="modal-header-actions">
+          <button class="modal-btn-fav" id="modal-btn-fav" title="Favorite"><i class="bi bi-heart"></i></button>
+          <button class="modal-btn-copy" id="modal-btn-copy" title="Copy"><i class="bi bi-clipboard"></i></button>
+          <button class="modal-btn-print" id="modal-btn-print" title="Print"><i class="bi bi-printer"></i></button>
+          <button class="modal-btn-close" id="modal-btn-close" title="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-props-grid">
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-layers"></i></span><span class="prop-label">Group</span><span class="prop-value" id="prop-group">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-circle-half"></i></span><span class="prop-label">Period</span><span class="prop-value" id="prop-period">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-lightning-charge"></i></span><span class="prop-label">Electronegativity</span><span class="prop-value" id="prop-en">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-cloud-fill"></i></span><span class="prop-label">Density (g/cm³)</span><span class="prop-value" id="prop-density">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-thermometer-low"></i></span><span class="prop-label">Melting Point (°C)</span><span class="prop-value" id="prop-melt">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-thermometer-high"></i></span><span class="prop-label">Boiling Point (°C)</span><span class="prop-value" id="prop-boil">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-calendar3"></i></span><span class="prop-label">Discovered</span><span class="prop-value" id="prop-year">—</span></div>
+          <div class="prop-card"><span class="prop-icon"><i class="bi bi-person-circle"></i></span><span class="prop-label">Discoverer</span><span class="prop-value" id="prop-discoverer">—</span></div>
+        </div>
+        <div class="modal-section">
+          <h4 class="modal-section-title"><i class="bi bi-cpu"></i> Electron Configuration</h4>
+          <div class="electron-config-box" id="prop-econfig"></div>
+        </div>
+        <div class="modal-section">
+          <h4 class="modal-section-title"><i class="bi bi-tools"></i> Uses</h4>
+          <p class="modal-text" id="prop-uses"></p>
+        </div>
+        <div class="modal-section facts-section">
+          <h4 class="modal-section-title"><i class="bi bi-lightbulb"></i> Interesting Facts</h4>
+          <p class="modal-text" id="prop-facts"></p>
+        </div>
+        <div class="modal-nav">
+          <button class="modal-nav-btn" id="modal-prev"><i class="bi bi-chevron-left"></i> Previous</button>
+          <span class="modal-nav-counter" id="modal-nav-counter">1 / 118</span>
+          <button class="modal-nav-btn" id="modal-next">Next <i class="bi bi-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shortcuts-panel" id="shortcuts-panel">
+    <h4><i class="bi bi-keyboard"></i> Keyboard Shortcuts</h4>
+    <ul>
+      <li><kbd>T</kbd> Toggle dark/light mode</li>
+      <li><kbd>R</kbd> Random element</li>
+      <li><kbd>F</kbd> Fullscreen</li>
+      <li><kbd>/</kbd> Focus search</li>
+      <li><kbd>Esc</kbd> Close modal</li>
+      <li><kbd>← →</kbd> Navigate elements</li>
+      <li><kbd>?</kbd> Show/hide this panel</li>
+    </ul>
+  </div>
+  <button class="btn-shortcuts" id="btn-shortcuts" title="Keyboard Shortcuts (?)"><i class="bi bi-keyboard"></i></button>
+
+  <div class="toast" id="toast"></div>
+
+  <footer class="site-footer">
+    <p>Designed &amp; Developed by <strong>Benn</strong> &nbsp;·&nbsp; Bibek Neupane</p>
+    <p class="footer-sub">All 118 elements · Works 100% offline · No API required</p>
+  </footer>
+
+<script>
+// ============================================================
+// elements.js — All 118 chemical elements data
+// Benn Periodic Table Explorer
+// Developer: Bibek Neupane (Benn)
+// ============================================================
+
+const ELEMENTS = [
+  {
+    atomicNumber: 1, symbol: "H", name: "Hydrogen",
+    atomicMass: 1.008, category: "nonmetal", group: 1, period: 1,
+    electronConfiguration: "1s¹",
+    electronegativity: 2.20, density: 0.00008988, meltingPoint: -259.16, boilingPoint: -252.88,
+    discoveryYear: 1766, discoverer: "Henry Cavendish",
+    uses: "Fuel cells, rocket propellant, ammonia production, petroleum refining, welding",
+    facts: "Most abundant element in the universe. Makes up about 75% of all normal matter by mass.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 1, gridRow: 1
+  },
+  {
+    atomicNumber: 2, symbol: "He", name: "Helium",
+    atomicMass: 4.0026, category: "noble-gas", group: 18, period: 1,
+    electronConfiguration: "1s²",
+    electronegativity: null, density: 0.0001785, meltingPoint: -272.20, boilingPoint: -268.93,
+    discoveryYear: 1868, discoverer: "Pierre Janssen & Norman Lockyer",
+    uses: "Balloons, airships, deep-sea diving, MRI machines, arc welding, semiconductors",
+    facts: "Second most abundant element in the observable universe. Named after Helios, the Greek god of the Sun.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 18, gridRow: 1
+  },
+  {
+    atomicNumber: 3, symbol: "Li", name: "Lithium",
+    atomicMass: 6.94, category: "alkali-metal", group: 1, period: 2,
+    electronConfiguration: "[He] 2s¹",
+    electronegativity: 0.98, density: 0.534, meltingPoint: 180.50, boilingPoint: 1342,
+    discoveryYear: 1817, discoverer: "Johan August Arfwedson",
+    uses: "Batteries, ceramics, glass, lubricants, mood-stabilizing medication (bipolar disorder)",
+    facts: "Lightest solid metal. So light it can float on water. Named from the Greek 'lithos' meaning stone.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 1, gridRow: 2
+  },
+  {
+    atomicNumber: 4, symbol: "Be", name: "Beryllium",
+    atomicMass: 9.0122, category: "alkaline-earth-metal", group: 2, period: 2,
+    electronConfiguration: "[He] 2s²",
+    electronegativity: 1.57, density: 1.85, meltingPoint: 1287, boilingPoint: 2468,
+    discoveryYear: 1797, discoverer: "Louis Nicolas Vauquelin",
+    uses: "Aerospace alloys, X-ray windows, nuclear reactors, gyroscopes, springs",
+    facts: "Extremely stiff and light metal. Highly toxic. One of the rarest elements in the universe.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 2, gridRow: 2
+  },
+  {
+    atomicNumber: 5, symbol: "B", name: "Boron",
+    atomicMass: 10.81, category: "metalloid", group: 13, period: 2,
+    electronConfiguration: "[He] 2s² 2p¹",
+    electronegativity: 2.04, density: 2.34, meltingPoint: 2075, boilingPoint: 4000,
+    discoveryYear: 1808, discoverer: "Humphry Davy, Joseph Louis Gay-Lussac & Louis Jacques Thénard",
+    uses: "Borosilicate glass, detergents, semiconductors, agriculture, nuclear reactors",
+    facts: "Not found free in nature. Produced entirely by cosmic ray spallation. Critical for plant growth.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 2
+  },
+  {
+    atomicNumber: 6, symbol: "C", name: "Carbon",
+    atomicMass: 12.011, category: "nonmetal", group: 14, period: 2,
+    electronConfiguration: "[He] 2s² 2p²",
+    electronegativity: 2.55, density: 2.267, meltingPoint: 3550, boilingPoint: 4027,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Steel production, fuel, plastics, pencils (graphite), diamonds, carbon fibers",
+    facts: "Basis of all known life. Forms more compounds than any other element. Diamond and graphite are pure carbon.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 2
+  },
+  {
+    atomicNumber: 7, symbol: "N", name: "Nitrogen",
+    atomicMass: 14.007, category: "nonmetal", group: 15, period: 2,
+    electronConfiguration: "[He] 2s² 2p³",
+    electronegativity: 3.04, density: 0.001251, meltingPoint: -210.00, boilingPoint: -195.79,
+    discoveryYear: 1772, discoverer: "Daniel Rutherford",
+    uses: "Fertilizers, explosives, food preservation, cryogenics, airbags",
+    facts: "Makes up 78% of Earth's atmosphere. Essential for all living things as part of amino acids and DNA.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 15, gridRow: 2
+  },
+  {
+    atomicNumber: 8, symbol: "O", name: "Oxygen",
+    atomicMass: 15.999, category: "nonmetal", group: 16, period: 2,
+    electronConfiguration: "[He] 2s² 2p⁴",
+    electronegativity: 3.44, density: 0.001429, meltingPoint: -218.79, boilingPoint: -182.96,
+    discoveryYear: 1774, discoverer: "Carl Wilhelm Scheele & Joseph Priestley",
+    uses: "Breathing, steel production, water treatment, rocket propellant, medical applications",
+    facts: "Third most abundant element in the universe. Makes up 21% of Earth's atmosphere.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 16, gridRow: 2
+  },
+  {
+    atomicNumber: 9, symbol: "F", name: "Fluorine",
+    atomicMass: 18.998, category: "halogen", group: 17, period: 2,
+    electronConfiguration: "[He] 2s² 2p⁵",
+    electronegativity: 3.98, density: 0.001696, meltingPoint: -219.67, boilingPoint: -188.11,
+    discoveryYear: 1886, discoverer: "Henri Moissan",
+    uses: "Toothpaste, Teflon, refrigerants, uranium enrichment, pharmaceuticals",
+    facts: "Most electronegative element. Most reactive of all elements. Can react with noble gases like xenon and krypton.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 17, gridRow: 2
+  },
+  {
+    atomicNumber: 10, symbol: "Ne", name: "Neon",
+    atomicMass: 20.180, category: "noble-gas", group: 18, period: 2,
+    electronConfiguration: "[He] 2s² 2p⁶",
+    electronegativity: null, density: 0.0008999, meltingPoint: -248.59, boilingPoint: -246.08,
+    discoveryYear: 1898, discoverer: "William Ramsay & Morris Travers",
+    uses: "Neon signs, lightning arrestors, vacuum tubes, high-voltage indicators, lasers",
+    facts: "Named from Greek 'neos' meaning new. Gives distinctive orange-red glow in vacuum tubes.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 18, gridRow: 2
+  },
+  {
+    atomicNumber: 11, symbol: "Na", name: "Sodium",
+    atomicMass: 22.990, category: "alkali-metal", group: 1, period: 3,
+    electronConfiguration: "[Ne] 3s¹",
+    electronegativity: 0.93, density: 0.968, meltingPoint: 97.79, boilingPoint: 882.80,
+    discoveryYear: 1807, discoverer: "Humphry Davy",
+    uses: "Table salt, soap, glass, paper, street lighting, nuclear reactors (coolant)",
+    facts: "So soft it can be cut with a knife. Reacts violently with water producing hydrogen gas.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 1, gridRow: 3
+  },
+  {
+    atomicNumber: 12, symbol: "Mg", name: "Magnesium",
+    atomicMass: 24.305, category: "alkaline-earth-metal", group: 2, period: 3,
+    electronConfiguration: "[Ne] 3s²",
+    electronegativity: 1.31, density: 1.738, meltingPoint: 650, boilingPoint: 1090,
+    discoveryYear: 1755, discoverer: "Joseph Black",
+    uses: "Alloys (aircraft, car seats), fireworks, flares, antacids, dietary supplements",
+    facts: "Eighth most abundant element in Earth's crust. Burns with intense white light. Essential for human metabolism.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 2, gridRow: 3
+  },
+  {
+    atomicNumber: 13, symbol: "Al", name: "Aluminum",
+    atomicMass: 26.982, category: "post-transition-metal", group: 13, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p¹",
+    electronegativity: 1.61, density: 2.698, meltingPoint: 660.32, boilingPoint: 2519,
+    discoveryYear: 1825, discoverer: "Hans Christian Ørsted",
+    uses: "Packaging, construction, transportation, electrical wires, cooking utensils",
+    facts: "Most abundant metal in Earth's crust. Once more valuable than gold. Highly recyclable.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 3
+  },
+  {
+    atomicNumber: 14, symbol: "Si", name: "Silicon",
+    atomicMass: 28.085, category: "metalloid", group: 14, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p²",
+    electronegativity: 1.90, density: 2.329, meltingPoint: 1414, boilingPoint: 3265,
+    discoveryYear: 1824, discoverer: "Jöns Jacob Berzelius",
+    uses: "Semiconductors, computer chips, solar cells, glass, ceramics, silicone products",
+    facts: "Second most abundant element in Earth's crust. Foundation of modern electronics. Gives name to Silicon Valley.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 3
+  },
+  {
+    atomicNumber: 15, symbol: "P", name: "Phosphorus",
+    atomicMass: 30.974, category: "nonmetal", group: 15, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p³",
+    electronegativity: 2.19, density: 1.82, meltingPoint: 44.15, boilingPoint: 280.50,
+    discoveryYear: 1669, discoverer: "Hennig Brand",
+    uses: "Fertilizers, detergents, matches, food additives, steel production, DNA & ATP",
+    facts: "First element discovered by a named individual. White phosphorus glows in the dark (phosphorescence).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 15, gridRow: 3
+  },
+  {
+    atomicNumber: 16, symbol: "S", name: "Sulfur",
+    atomicMass: 32.06, category: "nonmetal", group: 16, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p⁴",
+    electronegativity: 2.58, density: 2.067, meltingPoint: 115.21, boilingPoint: 444.61,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Sulfuric acid, rubber vulcanization, gunpowder, pesticides, pharmaceuticals",
+    facts: "Known since ancient times. Burns with blue flame producing toxic sulfur dioxide. Found near volcanoes.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 16, gridRow: 3
+  },
+  {
+    atomicNumber: 17, symbol: "Cl", name: "Chlorine",
+    atomicMass: 35.45, category: "halogen", group: 17, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p⁵",
+    electronegativity: 3.16, density: 0.003214, meltingPoint: -101.50, boilingPoint: -34.04,
+    discoveryYear: 1774, discoverer: "Carl Wilhelm Scheele",
+    uses: "Water purification, PVC plastic, disinfectants, pharmaceuticals, bleach",
+    facts: "Used as a chemical weapon in World War I. Essential component of table salt (NaCl).",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 17, gridRow: 3
+  },
+  {
+    atomicNumber: 18, symbol: "Ar", name: "Argon",
+    atomicMass: 39.948, category: "noble-gas", group: 18, period: 3,
+    electronConfiguration: "[Ne] 3s² 3p⁶",
+    electronegativity: null, density: 0.001784, meltingPoint: -189.35, boilingPoint: -185.85,
+    discoveryYear: 1894, discoverer: "Lord Rayleigh & William Ramsay",
+    uses: "Welding shield gas, light bulbs, windows insulation, semiconductor manufacturing",
+    facts: "Third most abundant gas in Earth's atmosphere at 0.93%. Named from Greek 'argos' meaning lazy.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 18, gridRow: 3
+  },
+  {
+    atomicNumber: 19, symbol: "K", name: "Potassium",
+    atomicMass: 39.098, category: "alkali-metal", group: 1, period: 4,
+    electronConfiguration: "[Ar] 4s¹",
+    electronegativity: 0.82, density: 0.862, meltingPoint: 63.50, boilingPoint: 759,
+    discoveryYear: 1807, discoverer: "Humphry Davy",
+    uses: "Fertilizers, soap, glass, gunpowder, food preservation, medicine",
+    facts: "Essential nutrient for all life. Bananas are famous for being rich in potassium. Symbol K from Latin 'kalium'.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 1, gridRow: 4
+  },
+  {
+    atomicNumber: 20, symbol: "Ca", name: "Calcium",
+    atomicMass: 40.078, category: "alkaline-earth-metal", group: 2, period: 4,
+    electronConfiguration: "[Ar] 4s²",
+    electronegativity: 1.00, density: 1.54, meltingPoint: 842, boilingPoint: 1484,
+    discoveryYear: 1808, discoverer: "Humphry Davy",
+    uses: "Cement, plaster, steel, calcium supplements, antacids, food additives",
+    facts: "Most abundant metal in the human body. Makes up bones and teeth. Fifth most abundant element in Earth's crust.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 2, gridRow: 4
+  },
+  {
+    atomicNumber: 21, symbol: "Sc", name: "Scandium",
+    atomicMass: 44.956, category: "transition-metal", group: 3, period: 4,
+    electronConfiguration: "[Ar] 3d¹ 4s²",
+    electronegativity: 1.36, density: 2.985, meltingPoint: 1541, boilingPoint: 2836,
+    discoveryYear: 1879, discoverer: "Lars Fredrik Nilson",
+    uses: "Aluminum-scandium alloys for aerospace, sports equipment, mercury vapor lamps",
+    facts: "Predicted by Mendeleev before its discovery. Extremely rare. Used in high-performance bicycle frames.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 3, gridRow: 4
+  },
+  {
+    atomicNumber: 22, symbol: "Ti", name: "Titanium",
+    atomicMass: 47.867, category: "transition-metal", group: 4, period: 4,
+    electronConfiguration: "[Ar] 3d² 4s²",
+    electronegativity: 1.54, density: 4.506, meltingPoint: 1668, boilingPoint: 3287,
+    discoveryYear: 1791, discoverer: "William Gregor",
+    uses: "Aerospace, medical implants, sports equipment, paint (TiO₂), jewelry",
+    facts: "Named after the Titans of Greek mythology. As strong as steel but 45% lighter. Highly biocompatible.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 4, gridRow: 4
+  },
+  {
+    atomicNumber: 23, symbol: "V", name: "Vanadium",
+    atomicMass: 50.942, category: "transition-metal", group: 5, period: 4,
+    electronConfiguration: "[Ar] 3d³ 4s²",
+    electronegativity: 1.63, density: 6.0, meltingPoint: 1910, boilingPoint: 3407,
+    discoveryYear: 1801, discoverer: "Andrés Manuel del Río",
+    uses: "Steel alloys, tools, springs, high-speed aircraft, catalysts, batteries",
+    facts: "Named after Vanadis, the Scandinavian goddess of beauty. Rediscovered after initially being overlooked.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 5, gridRow: 4
+  },
+  {
+    atomicNumber: 24, symbol: "Cr", name: "Chromium",
+    atomicMass: 51.996, category: "transition-metal", group: 6, period: 4,
+    electronConfiguration: "[Ar] 3d⁵ 4s¹",
+    electronegativity: 1.66, density: 7.15, meltingPoint: 1907, boilingPoint: 2671,
+    discoveryYear: 1797, discoverer: "Louis Nicolas Vauquelin",
+    uses: "Stainless steel, chrome plating, pigments, tanning leather, catalysts",
+    facts: "Named from Greek 'chroma' meaning color. Gives rubies their red color and emeralds their green color.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 6, gridRow: 4
+  },
+  {
+    atomicNumber: 25, symbol: "Mn", name: "Manganese",
+    atomicMass: 54.938, category: "transition-metal", group: 7, period: 4,
+    electronConfiguration: "[Ar] 3d⁵ 4s²",
+    electronegativity: 1.55, density: 7.21, meltingPoint: 1246, boilingPoint: 2061,
+    discoveryYear: 1774, discoverer: "Carl Wilhelm Scheele & Johan Gottlieb Gahn",
+    uses: "Steel production, batteries (alkaline), pigments, water purification, fertilizers",
+    facts: "Essential trace element in all known life. Pure manganese is extremely brittle and hard.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 7, gridRow: 4
+  },
+  {
+    atomicNumber: 26, symbol: "Fe", name: "Iron",
+    atomicMass: 55.845, category: "transition-metal", group: 8, period: 4,
+    electronConfiguration: "[Ar] 3d⁶ 4s²",
+    electronegativity: 1.83, density: 7.874, meltingPoint: 1538, boilingPoint: 2861,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Steel, construction, vehicles, machinery, hemoglobin in blood, magnets",
+    facts: "Most common element (by mass) on Earth. Earth's inner core is almost entirely iron. Used since 3000 BC.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 8, gridRow: 4
+  },
+  {
+    atomicNumber: 27, symbol: "Co", name: "Cobalt",
+    atomicMass: 58.933, category: "transition-metal", group: 9, period: 4,
+    electronConfiguration: "[Ar] 3d⁷ 4s²",
+    electronegativity: 1.88, density: 8.9, meltingPoint: 1495, boilingPoint: 2927,
+    discoveryYear: 1735, discoverer: "Georg Brandt",
+    uses: "Li-ion batteries, superalloys for jet engines, magnets, blue pigment (glass, ceramics)",
+    facts: "Gives glass and ceramics their vivid blue color. Essential for vitamin B12. Named from German 'Kobold' (goblin).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 9, gridRow: 4
+  },
+  {
+    atomicNumber: 28, symbol: "Ni", name: "Nickel",
+    atomicMass: 58.693, category: "transition-metal", group: 10, period: 4,
+    electronConfiguration: "[Ar] 3d⁸ 4s²",
+    electronegativity: 1.91, density: 8.908, meltingPoint: 1455, boilingPoint: 2913,
+    discoveryYear: 1751, discoverer: "Axel Fredrik Cronstedt",
+    uses: "Stainless steel, coins, batteries, plating, alloys, magnets, catalysts",
+    facts: "Named from 'Kupfernickel' (Devil's copper) because miners thought it contained copper but couldn't extract it.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 10, gridRow: 4
+  },
+  {
+    atomicNumber: 29, symbol: "Cu", name: "Copper",
+    atomicMass: 63.546, category: "transition-metal", group: 11, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s¹",
+    electronegativity: 1.90, density: 8.96, meltingPoint: 1084.62, boilingPoint: 2562,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Electrical wiring, plumbing, coins, electronics, alloys (brass, bronze)",
+    facts: "One of the first metals used by humans (~10,000 years ago). Excellent electrical conductor. Naturally antimicrobial.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 11, gridRow: 4
+  },
+  {
+    atomicNumber: 30, symbol: "Zn", name: "Zinc",
+    atomicMass: 65.38, category: "transition-metal", group: 12, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s²",
+    electronegativity: 1.65, density: 7.134, meltingPoint: 419.53, boilingPoint: 907,
+    discoveryYear: 1746, discoverer: "Andreas Sigismund Marggraf",
+    uses: "Galvanizing steel, brass alloys, sunscreen, die-casting, dietary supplements",
+    facts: "Essential trace element for humans. Deficiency affects over 2 billion people worldwide. Blue-white flame when burned.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 12, gridRow: 4
+  },
+  {
+    atomicNumber: 31, symbol: "Ga", name: "Gallium",
+    atomicMass: 69.723, category: "post-transition-metal", group: 13, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p¹",
+    electronegativity: 1.81, density: 5.907, meltingPoint: 29.76, boilingPoint: 2229,
+    discoveryYear: 1875, discoverer: "Paul Emile Lecoq de Boisbaudran",
+    uses: "LEDs, solar panels, semiconductors, thermometers, mirrors",
+    facts: "Melts in your hand at 29.76°C. Predicted by Mendeleev before discovery. Expands when it solidifies like water.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 4
+  },
+  {
+    atomicNumber: 32, symbol: "Ge", name: "Germanium",
+    atomicMass: 72.630, category: "metalloid", group: 14, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p²",
+    electronegativity: 2.01, density: 5.323, meltingPoint: 938.25, boilingPoint: 2833,
+    discoveryYear: 1886, discoverer: "Clemens Winkler",
+    uses: "Fiber optics, semiconductors, infrared optics, solar cells, catalysts",
+    facts: "Predicted by Mendeleev as 'eka-silicon'. Discovery validated the periodic table. Key to early transistors.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 4
+  },
+  {
+    atomicNumber: 33, symbol: "As", name: "Arsenic",
+    atomicMass: 74.922, category: "metalloid", group: 15, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p³",
+    electronegativity: 2.18, density: 5.727, meltingPoint: 817, boilingPoint: 614,
+    discoveryYear: 1250, discoverer: "Albertus Magnus",
+    uses: "Semiconductors, pesticides, wood preservatives, glass manufacturing, alloys",
+    facts: "Known since antiquity as a poison. Used in Victorian-era green wallpapers. Has semiconductor properties.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 15, gridRow: 4
+  },
+  {
+    atomicNumber: 34, symbol: "Se", name: "Selenium",
+    atomicMass: 78.971, category: "nonmetal", group: 16, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁴",
+    electronegativity: 2.55, density: 4.81, meltingPoint: 220.80, boilingPoint: 685,
+    discoveryYear: 1817, discoverer: "Jöns Jacob Berzelius",
+    uses: "Photocopiers, solar cells, pigments, glass decolorizing, dietary supplements",
+    facts: "Named after Selene, Greek goddess of the moon. Electrical conductivity increases in light (used in photocopiers).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 16, gridRow: 4
+  },
+  {
+    atomicNumber: 35, symbol: "Br", name: "Bromine",
+    atomicMass: 79.904, category: "halogen", group: 17, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁵",
+    electronegativity: 2.96, density: 3.122, meltingPoint: -7.20, boilingPoint: 58.80,
+    discoveryYear: 1826, discoverer: "Antoine Jérôme Balard",
+    uses: "Flame retardants, photography, fumigants, dyes, pharmaceuticals",
+    facts: "One of only two elements that is liquid at room temperature (along with mercury). Foul-smelling, named from Greek 'bromos' (stench).",
+    state: "Liquid", natural: true, radioactive: false, gridColumn: 17, gridRow: 4
+  },
+  {
+    atomicNumber: 36, symbol: "Kr", name: "Krypton",
+    atomicMass: 83.798, category: "noble-gas", group: 18, period: 4,
+    electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁶",
+    electronegativity: 3.00, density: 0.003749, meltingPoint: -157.36, boilingPoint: -153.22,
+    discoveryYear: 1898, discoverer: "William Ramsay & Morris Travers",
+    uses: "Lighting (fluorescent, flash), lasers, insulating windows, photography",
+    facts: "Named from Greek 'kryptos' meaning hidden. The meter was once defined as a specific number of Kr-86 wavelengths.",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 18, gridRow: 4
+  },
+  {
+    atomicNumber: 37, symbol: "Rb", name: "Rubidium",
+    atomicMass: 85.468, category: "alkali-metal", group: 1, period: 5,
+    electronConfiguration: "[Kr] 5s¹",
+    electronegativity: 0.82, density: 1.532, meltingPoint: 39.31, boilingPoint: 688,
+    discoveryYear: 1861, discoverer: "Robert Bunsen & Gustav Kirchhoff",
+    uses: "Atomic clocks, medical imaging (PET scans), photovoltaics, glass fiber manufacturing",
+    facts: "Name means 'deep red' in Latin, for its spectral lines. First element discovered by spectroscopy.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 1, gridRow: 5
+  },
+  {
+    atomicNumber: 38, symbol: "Sr", name: "Strontium",
+    atomicMass: 87.62, category: "alkaline-earth-metal", group: 2, period: 5,
+    electronConfiguration: "[Kr] 5s²",
+    electronegativity: 0.95, density: 2.64, meltingPoint: 777, boilingPoint: 1382,
+    discoveryYear: 1790, discoverer: "Adair Crawford",
+    uses: "Fireworks (red color), CRT televisions, magnets, nuclear waste treatment",
+    facts: "Radioactive Sr-90 from nuclear fallout mimics calcium in bones. Gives fireworks their brilliant red color.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 2, gridRow: 5
+  },
+  {
+    atomicNumber: 39, symbol: "Y", name: "Yttrium",
+    atomicMass: 88.906, category: "transition-metal", group: 3, period: 5,
+    electronConfiguration: "[Kr] 4d¹ 5s²",
+    electronegativity: 1.22, density: 4.472, meltingPoint: 1522, boilingPoint: 3345,
+    discoveryYear: 1794, discoverer: "Johan Gadolin",
+    uses: "LED phosphors, laser crystals (YAG), superconductors, camera lenses",
+    facts: "Named after Ytterby village in Sweden. Four elements are named after this small town.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 3, gridRow: 5
+  },
+  {
+    atomicNumber: 40, symbol: "Zr", name: "Zirconium",
+    atomicMass: 91.224, category: "transition-metal", group: 4, period: 5,
+    electronConfiguration: "[Kr] 4d² 5s²",
+    electronegativity: 1.33, density: 6.52, meltingPoint: 1855, boilingPoint: 4409,
+    discoveryYear: 1789, discoverer: "Martin Heinrich Klaproth",
+    uses: "Nuclear reactor cladding, ceramics, cubic zirconia (diamond substitute), catalysts",
+    facts: "Almost completely transparent to neutrons, making it ideal for nuclear fuel rod cladding.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 4, gridRow: 5
+  },
+  {
+    atomicNumber: 41, symbol: "Nb", name: "Niobium",
+    atomicMass: 92.906, category: "transition-metal", group: 5, period: 5,
+    electronConfiguration: "[Kr] 4d⁴ 5s¹",
+    electronegativity: 1.60, density: 8.57, meltingPoint: 2477, boilingPoint: 4744,
+    discoveryYear: 1801, discoverer: "Charles Hatchett",
+    uses: "Steel alloys (pipelines), superconducting magnets (MRI), jewelry, coins",
+    facts: "Named after Niobe, daughter of Tantalus. Superconducting when cooled below -264°C.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 5, gridRow: 5
+  },
+  {
+    atomicNumber: 42, symbol: "Mo", name: "Molybdenum",
+    atomicMass: 95.95, category: "transition-metal", group: 6, period: 5,
+    electronConfiguration: "[Kr] 4d⁵ 5s¹",
+    electronegativity: 2.16, density: 10.28, meltingPoint: 2623, boilingPoint: 4639,
+    discoveryYear: 1778, discoverer: "Carl Wilhelm Scheele",
+    uses: "High-strength steel alloys, lubricants, catalysts, electrodes, pigments",
+    facts: "Has the sixth highest melting point of all elements. Essential trace element in nearly all organisms.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 6, gridRow: 5
+  },
+  {
+    atomicNumber: 43, symbol: "Tc", name: "Technetium",
+    atomicMass: 98, category: "transition-metal", group: 7, period: 5,
+    electronConfiguration: "[Kr] 4d⁵ 5s²",
+    electronegativity: 1.90, density: 11, meltingPoint: 2157, boilingPoint: 4265,
+    discoveryYear: 1937, discoverer: "Carlo Perrier & Emilio Segrè",
+    uses: "Medical imaging (nuclear medicine), industrial radiography",
+    facts: "First artificially produced element. All isotopes are radioactive. No stable isotopes exist in nature.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 7, gridRow: 5
+  },
+  {
+    atomicNumber: 44, symbol: "Ru", name: "Ruthenium",
+    atomicMass: 101.07, category: "transition-metal", group: 8, period: 5,
+    electronConfiguration: "[Kr] 4d⁷ 5s¹",
+    electronegativity: 2.20, density: 12.45, meltingPoint: 2334, boilingPoint: 4150,
+    discoveryYear: 1844, discoverer: "Karl Ernst Claus",
+    uses: "Electrical contacts, jewelry (platinum alloys), catalysts, solar cells, data storage",
+    facts: "Named after Ruthenia (Russia). One of the rarest elements in Earth's crust.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 8, gridRow: 5
+  },
+  {
+    atomicNumber: 45, symbol: "Rh", name: "Rhodium",
+    atomicMass: 102.91, category: "transition-metal", group: 9, period: 5,
+    electronConfiguration: "[Kr] 4d⁸ 5s¹",
+    electronegativity: 2.28, density: 12.41, meltingPoint: 1964, boilingPoint: 3695,
+    discoveryYear: 1803, discoverer: "William Hyde Wollaston",
+    uses: "Catalytic converters, jewelry plating, electrical contacts, high-temperature alloys",
+    facts: "Most expensive element. Used in 3-way catalytic converters to reduce car emissions.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 9, gridRow: 5
+  },
+  {
+    atomicNumber: 46, symbol: "Pd", name: "Palladium",
+    atomicMass: 106.42, category: "transition-metal", group: 10, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰",
+    electronegativity: 2.20, density: 12.02, meltingPoint: 1554.90, boilingPoint: 2963,
+    discoveryYear: 1803, discoverer: "William Hyde Wollaston",
+    uses: "Catalytic converters, hydrogen purification, jewelry, electronics, dentistry",
+    facts: "Can absorb up to 900 times its own volume of hydrogen. Named after asteroid Pallas.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 10, gridRow: 5
+  },
+  {
+    atomicNumber: 47, symbol: "Ag", name: "Silver",
+    atomicMass: 107.87, category: "transition-metal", group: 11, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s¹",
+    electronegativity: 1.93, density: 10.49, meltingPoint: 961.78, boilingPoint: 2162,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Jewelry, currency, photography, electronics, solar panels, antibacterial applications",
+    facts: "Best electrical and thermal conductor of all metals. Has been used as money for over 4000 years.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 11, gridRow: 5
+  },
+  {
+    atomicNumber: 48, symbol: "Cd", name: "Cadmium",
+    atomicMass: 112.41, category: "transition-metal", group: 12, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s²",
+    electronegativity: 1.69, density: 8.65, meltingPoint: 321.07, boilingPoint: 767,
+    discoveryYear: 1817, discoverer: "Karl Samuel Leberecht Hermann",
+    uses: "Rechargeable batteries (NiCd), pigments, coatings, nuclear reactor control rods",
+    facts: "Extremely toxic. Itai-itai disease caused by cadmium poisoning in Japan. Used in nuclear reactors to absorb neutrons.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 12, gridRow: 5
+  },
+  {
+    atomicNumber: 49, symbol: "In", name: "Indium",
+    atomicMass: 114.82, category: "post-transition-metal", group: 13, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p¹",
+    electronegativity: 1.78, density: 7.31, meltingPoint: 156.60, boilingPoint: 2072,
+    discoveryYear: 1863, discoverer: "Ferdinand Reich & Hieronymous Theodor Richter",
+    uses: "LCD screens (ITO coating), semiconductors, solders, bearings, electroplating",
+    facts: "Makes a high-pitched 'tin cry' when bent. Touchscreens in smartphones use indium tin oxide.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 5
+  },
+  {
+    atomicNumber: 50, symbol: "Sn", name: "Tin",
+    atomicMass: 118.71, category: "post-transition-metal", group: 14, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p²",
+    electronegativity: 1.96, density: 7.265, meltingPoint: 231.93, boilingPoint: 2602,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Tin cans, solder, bronze (Cu-Sn alloy), pewter, glass production",
+    facts: "'Tin cry': crunching sound when bent due to crystal structure change. Used in bronze since 3000 BC.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 5
+  },
+  {
+    atomicNumber: 51, symbol: "Sb", name: "Antimony",
+    atomicMass: 121.76, category: "metalloid", group: 15, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p³",
+    electronegativity: 2.05, density: 6.697, meltingPoint: 630.63, boilingPoint: 1587,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Flame retardants, batteries, alloys, semiconductors, pigments",
+    facts: "Used as eye cosmetics in ancient Egypt (kohl). Symbol Sb from Latin 'stibium'.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 15, gridRow: 5
+  },
+  {
+    atomicNumber: 52, symbol: "Te", name: "Tellurium",
+    atomicMass: 127.60, category: "metalloid", group: 16, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁴",
+    electronegativity: 2.10, density: 6.24, meltingPoint: 449.51, boilingPoint: 988,
+    discoveryYear: 1782, discoverer: "Franz-Joseph Müller von Reichenstein",
+    uses: "Solar cells (CdTe), thermoelectric devices, rubber vulcanization, alloying",
+    facts: "Named after Earth (Tellus). One of the rarest stable elements in Earth's crust. More abundant on the Moon.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 16, gridRow: 5
+  },
+  {
+    atomicNumber: 53, symbol: "I", name: "Iodine",
+    atomicMass: 126.90, category: "halogen", group: 17, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁵",
+    electronegativity: 2.66, density: 4.933, meltingPoint: 113.70, boilingPoint: 184.30,
+    discoveryYear: 1811, discoverer: "Bernard Courtois",
+    uses: "Antiseptic, thyroid medicine, photography, water purification, nutrition",
+    facts: "Sublimes directly from solid to purple gas. Essential for thyroid hormones. Added to table salt to prevent deficiency.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 17, gridRow: 5
+  },
+  {
+    atomicNumber: 54, symbol: "Xe", name: "Xenon",
+    atomicMass: 131.29, category: "noble-gas", group: 18, period: 5,
+    electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁶",
+    electronegativity: 2.60, density: 0.005887, meltingPoint: -111.75, boilingPoint: -108.12,
+    discoveryYear: 1898, discoverer: "William Ramsay & Morris Travers",
+    uses: "Lighting (xenon headlights), ion propulsion in spacecraft, anesthesia, imaging",
+    facts: "Can form compounds despite being a noble gas. Used in spacecraft ion engines. Named from Greek 'xenos' (stranger).",
+    state: "Gas", natural: true, radioactive: false, gridColumn: 18, gridRow: 5
+  },
+  {
+    atomicNumber: 55, symbol: "Cs", name: "Cesium",
+    atomicMass: 132.91, category: "alkali-metal", group: 1, period: 6,
+    electronConfiguration: "[Xe] 6s¹",
+    electronegativity: 0.79, density: 1.873, meltingPoint: 28.50, boilingPoint: 671,
+    discoveryYear: 1860, discoverer: "Robert Bunsen & Gustav Kirchhoff",
+    uses: "Atomic clocks (defines the SI second), drilling fluids, photoelectric cells",
+    facts: "Melts at body temperature (28.5°C). Cesium atomic clocks are the most accurate timekeepers ever made.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 1, gridRow: 6
+  },
+  {
+    atomicNumber: 56, symbol: "Ba", name: "Barium",
+    atomicMass: 137.33, category: "alkaline-earth-metal", group: 2, period: 6,
+    electronConfiguration: "[Xe] 6s²",
+    electronegativity: 0.89, density: 3.51, meltingPoint: 727, boilingPoint: 1870,
+    discoveryYear: 1808, discoverer: "Humphry Davy",
+    uses: "Drilling fluids, medical imaging (barium meals), fireworks (green), glass, paint",
+    facts: "Barium sulfate is swallowed for X-ray imaging of the GI tract. Burns with brilliant green flames.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 2, gridRow: 6
+  },
+  {
+    atomicNumber: 57, symbol: "La", name: "Lanthanum",
+    atomicMass: 138.91, category: "lanthanide", group: 3, period: 6,
+    electronConfiguration: "[Xe] 5d¹ 6s²",
+    electronegativity: 1.10, density: 6.145, meltingPoint: 920, boilingPoint: 3464,
+    discoveryYear: 1839, discoverer: "Carl Gustaf Mosander",
+    uses: "Camera lenses, night-vision goggles, catalytic converters, hydrogen storage",
+    facts: "Name means 'hidden' in Greek. First lanthanide element. Used in hybrid car batteries.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 3, gridRow: 9
+  },
+  {
+    atomicNumber: 58, symbol: "Ce", name: "Cerium",
+    atomicMass: 140.12, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹ 5d¹ 6s²",
+    electronegativity: 1.12, density: 6.770, meltingPoint: 798, boilingPoint: 3443,
+    discoveryYear: 1803, discoverer: "Wilhelm Hisinger & Jöns Jacob Berzelius",
+    uses: "Catalytic converters, glass polishing, self-cleaning ovens, lighter flints",
+    facts: "Most abundant rare earth element. Named after the dwarf planet Ceres. Used in glass polishing agents.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 4, gridRow: 9
+  },
+  {
+    atomicNumber: 59, symbol: "Pr", name: "Praseodymium",
+    atomicMass: 140.91, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f³ 6s²",
+    electronegativity: 1.13, density: 6.773, meltingPoint: 931, boilingPoint: 3520,
+    discoveryYear: 1885, discoverer: "Carl Auer von Welsbach",
+    uses: "High-strength magnets, aircraft engines, yellow/green pigments, goggles for glassblowers",
+    facts: "Name means 'green twin' in Greek. Gives glass a yellow-green tint. Used to protect glassblowers' eyes.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 5, gridRow: 9
+  },
+  {
+    atomicNumber: 60, symbol: "Nd", name: "Neodymium",
+    atomicMass: 144.24, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁴ 6s²",
+    electronegativity: 1.14, density: 7.007, meltingPoint: 1016, boilingPoint: 3074,
+    discoveryYear: 1885, discoverer: "Carl Auer von Welsbach",
+    uses: "Strongest permanent magnets (NdFeB), microphones, headphones, wind turbines, hard drives",
+    facts: "Powers the strongest type of permanent magnet. Critical for electric vehicles and wind turbines.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 6, gridRow: 9
+  },
+  {
+    atomicNumber: 61, symbol: "Pm", name: "Promethium",
+    atomicMass: 145, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁵ 6s²",
+    electronegativity: 1.13, density: 7.26, meltingPoint: 1042, boilingPoint: 3000,
+    discoveryYear: 1945, discoverer: "Jacob A. Marinsky, Lawrence E. Glendenin & Charles D. Coryell",
+    uses: "Nuclear batteries (pacemakers), thickness gauges, luminescent paint",
+    facts: "Only rare earth element with no stable isotopes. Named after Prometheus who stole fire from the gods.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 7, gridRow: 9
+  },
+  {
+    atomicNumber: 62, symbol: "Sm", name: "Samarium",
+    atomicMass: 150.36, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁶ 6s²",
+    electronegativity: 1.17, density: 7.52, meltingPoint: 1074, boilingPoint: 1794,
+    discoveryYear: 1879, discoverer: "Lecoq de Boisbaudran",
+    uses: "Permanent magnets, cancer treatment (bone pain), catalysts, infrared absorbing glass",
+    facts: "Named after the mineral samarskite. Sm-Co magnets retain magnetism at high temperatures.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 8, gridRow: 9
+  },
+  {
+    atomicNumber: 63, symbol: "Eu", name: "Europium",
+    atomicMass: 151.96, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁷ 6s²",
+    electronegativity: 1.20, density: 5.243, meltingPoint: 826, boilingPoint: 1529,
+    discoveryYear: 1901, discoverer: "Eugène-Anatole Demarçay",
+    uses: "Euro banknote security features, TV screens (red/blue phosphors), lasers",
+    facts: "Used as anti-counterfeiting security in Euro banknotes. Named after the continent Europe.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 9, gridRow: 9
+  },
+  {
+    atomicNumber: 64, symbol: "Gd", name: "Gadolinium",
+    atomicMass: 157.25, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁷ 5d¹ 6s²",
+    electronegativity: 1.20, density: 7.895, meltingPoint: 1313, boilingPoint: 3273,
+    discoveryYear: 1880, discoverer: "Jean Charles de Marignac",
+    uses: "MRI contrast agents, nuclear reactor shielding, computer memory, X-ray screens",
+    facts: "Has the highest neutron absorption of any stable element. Used as contrast agent in MRI scans.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 10, gridRow: 9
+  },
+  {
+    atomicNumber: 65, symbol: "Tb", name: "Terbium",
+    atomicMass: 158.93, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f⁹ 6s²",
+    electronegativity: 1.10, density: 8.229, meltingPoint: 1356, boilingPoint: 3230,
+    discoveryYear: 1843, discoverer: "Carl Gustaf Mosander",
+    uses: "Green phosphors in TVs, fuel cells (solid oxide), naval sonar systems, actuators",
+    facts: "One of four elements named after Ytterby village in Sweden. Used in 'smart' materials that change shape.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 11, gridRow: 9
+  },
+  {
+    atomicNumber: 66, symbol: "Dy", name: "Dysprosium",
+    atomicMass: 162.50, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁰ 6s²",
+    electronegativity: 1.22, density: 8.55, meltingPoint: 1412, boilingPoint: 2567,
+    discoveryYear: 1886, discoverer: "Lecoq de Boisbaudran",
+    uses: "Neodymium magnets (temperature stability), data storage, nuclear control rods",
+    facts: "Name from Greek 'dysprositos' meaning hard to get. Added to NdFeB magnets for use in electric vehicles.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 12, gridRow: 9
+  },
+  {
+    atomicNumber: 67, symbol: "Ho", name: "Holmium",
+    atomicMass: 164.93, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹¹ 6s²",
+    electronegativity: 1.23, density: 8.795, meltingPoint: 1472, boilingPoint: 2700,
+    discoveryYear: 1878, discoverer: "Marc Delafontaine & Jacques-Louis Soret",
+    uses: "High-power magnets, nuclear reactor control rods, medical lasers (kidney stones)",
+    facts: "Named after Holmia, Latin for Stockholm. Has the highest magnetic moment of any natural element.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 9
+  },
+  {
+    atomicNumber: 68, symbol: "Er", name: "Erbium",
+    atomicMass: 167.26, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹² 6s²",
+    electronegativity: 1.24, density: 9.066, meltingPoint: 1529, boilingPoint: 2868,
+    discoveryYear: 1843, discoverer: "Carl Gustaf Mosander",
+    uses: "Fiber optic amplifiers, lasers, pink glass, metallurgical alloys",
+    facts: "Critical for fiber optic telecommunications. Erbium-doped fiber amplifiers boosted the internet.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 9
+  },
+  {
+    atomicNumber: 69, symbol: "Tm", name: "Thulium",
+    atomicMass: 168.93, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹³ 6s²",
+    electronegativity: 1.25, density: 9.32, meltingPoint: 1545, boilingPoint: 1950,
+    discoveryYear: 1879, discoverer: "Per Teodor Cleve",
+    uses: "Portable X-ray devices, surgical lasers, high-temperature superconductors",
+    facts: "Named after Thule, a mythical land in Scandinavia. Rarest of the naturally occurring lanthanides.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 15, gridRow: 9
+  },
+  {
+    atomicNumber: 70, symbol: "Yb", name: "Ytterbium",
+    atomicMass: 173.05, category: "lanthanide", group: null, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 6s²",
+    electronegativity: 1.10, density: 6.965, meltingPoint: 824, boilingPoint: 1196,
+    discoveryYear: 1878, discoverer: "Jean Charles de Marignac",
+    uses: "Atomic clocks, stress gauges, chemical reducing agent, cancer treatment",
+    facts: "One of four elements named after Ytterby. Used in the world's most accurate atomic clocks.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 16, gridRow: 9
+  },
+  {
+    atomicNumber: 71, symbol: "Lu", name: "Lutetium",
+    atomicMass: 174.97, category: "lanthanide", group: 3, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹ 6s²",
+    electronegativity: 1.27, density: 9.84, meltingPoint: 1663, boilingPoint: 3402,
+    discoveryYear: 1907, discoverer: "Georges Urbain",
+    uses: "PET scan detectors, catalysts for petroleum cracking, LED phosphors",
+    facts: "Densest and hardest lanthanide. Named after Lutetia, the Latin name for Paris.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 17, gridRow: 9
+  },
+  {
+    atomicNumber: 72, symbol: "Hf", name: "Hafnium",
+    atomicMass: 178.49, category: "transition-metal", group: 4, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d² 6s²",
+    electronegativity: 1.30, density: 13.31, meltingPoint: 2233, boilingPoint: 4603,
+    discoveryYear: 1923, discoverer: "Dirk Coster & Georg von Hevesy",
+    uses: "Nuclear reactor control rods, high-temperature alloys, microprocessor gates",
+    facts: "Predicted by Bohr using the periodic table. Always found together with zirconium. Used in modern CPUs.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 4, gridRow: 6
+  },
+  {
+    atomicNumber: 73, symbol: "Ta", name: "Tantalum",
+    atomicMass: 180.95, category: "transition-metal", group: 5, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d³ 6s²",
+    electronegativity: 1.50, density: 16.65, meltingPoint: 3017, boilingPoint: 5458,
+    discoveryYear: 1802, discoverer: "Anders Gustaf Ekeberg",
+    uses: "Capacitors (smartphones, computers), surgical implants, chemical equipment, turbine blades",
+    facts: "Named after Tantalus of Greek mythology. Major driver of conflict in Central Africa (coltan mining).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 5, gridRow: 6
+  },
+  {
+    atomicNumber: 74, symbol: "W", name: "Tungsten",
+    atomicMass: 183.84, category: "transition-metal", group: 6, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d⁴ 6s²",
+    electronegativity: 2.36, density: 19.25, meltingPoint: 3422, boilingPoint: 5555,
+    discoveryYear: 1783, discoverer: "Juan José & Fausto Elhuyar",
+    uses: "Light bulb filaments, drill bits, X-ray tubes, radiation shielding, armor-piercing bullets",
+    facts: "Highest melting point of all elements (3422°C). Symbol W from German 'Wolfram'. Densest natural element on Earth.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 6, gridRow: 6
+  },
+  {
+    atomicNumber: 75, symbol: "Re", name: "Rhenium",
+    atomicMass: 186.21, category: "transition-metal", group: 7, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d⁵ 6s²",
+    electronegativity: 1.90, density: 21.02, meltingPoint: 3186, boilingPoint: 5596,
+    discoveryYear: 1925, discoverer: "Masataka Ogawa, Walter Noddack & Ida Noddack",
+    uses: "Jet engine superalloys, catalysts for unleaded gasoline, electrical contacts",
+    facts: "Last naturally occurring element to be discovered. One of the rarest elements. Named after the Rhine river.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 7, gridRow: 6
+  },
+  {
+    atomicNumber: 76, symbol: "Os", name: "Osmium",
+    atomicMass: 190.23, category: "transition-metal", group: 8, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d⁶ 6s²",
+    electronegativity: 2.20, density: 22.59, meltingPoint: 3033, boilingPoint: 5012,
+    discoveryYear: 1803, discoverer: "Smithson Tennant",
+    uses: "Fountain pen tips, electrical contacts, fingerprint detection, phonograph needles",
+    facts: "Densest naturally occurring element (22.59 g/cm³). Named from Greek 'osme' meaning smell (it has a foul odor).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 8, gridRow: 6
+  },
+  {
+    atomicNumber: 77, symbol: "Ir", name: "Iridium",
+    atomicMass: 192.22, category: "transition-metal", group: 9, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d⁷ 6s²",
+    electronegativity: 2.20, density: 22.56, meltingPoint: 2446, boilingPoint: 4428,
+    discoveryYear: 1803, discoverer: "Smithson Tennant",
+    uses: "Spark plugs, compass bearings, deep-ocean probes, catalyst, international prototype kilogram",
+    facts: "Most corrosion-resistant metal. Named after Iris, goddess of the rainbow. The K-Pg extinction event left an iridium layer.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 9, gridRow: 6
+  },
+  {
+    atomicNumber: 78, symbol: "Pt", name: "Platinum",
+    atomicMass: 195.08, category: "transition-metal", group: 10, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d⁹ 6s¹",
+    electronegativity: 2.28, density: 21.45, meltingPoint: 1768.30, boilingPoint: 3825,
+    discoveryYear: 1735, discoverer: "Antonio de Ulloa",
+    uses: "Catalytic converters, jewelry, cancer drugs (cisplatin), electrodes, glass manufacturing",
+    facts: "Does not corrode. Used as international standard of mass. More rare than gold.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 10, gridRow: 6
+  },
+  {
+    atomicNumber: 79, symbol: "Au", name: "Gold",
+    atomicMass: 196.97, category: "transition-metal", group: 11, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s¹",
+    electronegativity: 2.54, density: 19.30, meltingPoint: 1064.18, boilingPoint: 2856,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Jewelry, electronics (corrosion-free connectors), dentistry, medicine, currency",
+    facts: "Most malleable metal – 1 gram can be beaten into 1 square meter. Does not tarnish or corrode.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 11, gridRow: 6
+  },
+  {
+    atomicNumber: 80, symbol: "Hg", name: "Mercury",
+    atomicMass: 200.59, category: "transition-metal", group: 12, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s²",
+    electronegativity: 2.00, density: 13.534, meltingPoint: -38.83, boilingPoint: 356.73,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Thermometers, barometers, fluorescent lights, gold mining (amalgam), scientific instruments",
+    facts: "Only metal that is liquid at room temperature. Extremely toxic. Alchemists called it 'quicksilver'.",
+    state: "Liquid", natural: true, radioactive: false, gridColumn: 12, gridRow: 6
+  },
+  {
+    atomicNumber: 81, symbol: "Tl", name: "Thallium",
+    atomicMass: 204.38, category: "post-transition-metal", group: 13, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹",
+    electronegativity: 1.62, density: 11.85, meltingPoint: 304, boilingPoint: 1473,
+    discoveryYear: 1861, discoverer: "William Crookes",
+    uses: "Cardiac imaging, infrared detectors, semiconductor research, rodenticide (historical)",
+    facts: "Extremely toxic, once used as a murder weapon ('inheritance powder'). Named from Greek 'thallos' (green shoot).",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 13, gridRow: 6
+  },
+  {
+    atomicNumber: 82, symbol: "Pb", name: "Lead",
+    atomicMass: 207.2, category: "post-transition-metal", group: 14, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²",
+    electronegativity: 2.33, density: 11.34, meltingPoint: 327.46, boilingPoint: 1749,
+    discoveryYear: "Ancient", discoverer: "Known since antiquity",
+    uses: "Batteries, radiation shielding, ammunition, soldering, roofing",
+    facts: "Known and used since ancient Rome. Romans used lead pipes for plumbing (plumbum = Latin for lead). Cumulative neurotoxin.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 14, gridRow: 6
+  },
+  {
+    atomicNumber: 83, symbol: "Bi", name: "Bismuth",
+    atomicMass: 208.98, category: "post-transition-metal", group: 15, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³",
+    electronegativity: 2.02, density: 9.78, meltingPoint: 271.40, boilingPoint: 1564,
+    discoveryYear: 1753, discoverer: "Claude François Geoffroy",
+    uses: "Pepto-Bismol (stomach medicine), cosmetics, fire sprinkler systems, fishing sinkers",
+    facts: "Most naturally diamagnetic element. Heaviest element with stable isotope. Beautiful crystalline rainbow structure.",
+    state: "Solid", natural: true, radioactive: false, gridColumn: 15, gridRow: 6
+  },
+  {
+    atomicNumber: 84, symbol: "Po", name: "Polonium",
+    atomicMass: 209, category: "post-transition-metal", group: 16, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴",
+    electronegativity: 2.00, density: 9.196, meltingPoint: 254, boilingPoint: 962,
+    discoveryYear: 1898, discoverer: "Marie & Pierre Curie",
+    uses: "Antistatic devices, neutron sources, nuclear weapon triggers, space probes (heat source)",
+    facts: "Discovered by Marie Curie, named after her homeland Poland. Over 30 times more radioactive than radium.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 16, gridRow: 6
+  },
+  {
+    atomicNumber: 85, symbol: "At", name: "Astatine",
+    atomicMass: 210, category: "halogen", group: 17, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵",
+    electronegativity: 2.20, density: 7, meltingPoint: 302, boilingPoint: 337,
+    discoveryYear: 1940, discoverer: "Dale R. Corson, Kenneth Ross MacKenzie & Emilio G. Segrè",
+    uses: "Cancer treatment (targeted alpha therapy), research",
+    facts: "Rarest naturally occurring element. At any time, Earth contains less than 1 gram total.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 17, gridRow: 6
+  },
+  {
+    atomicNumber: 86, symbol: "Rn", name: "Radon",
+    atomicMass: 222, category: "noble-gas", group: 18, period: 6,
+    electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶",
+    electronegativity: 2.20, density: 0.00973, meltingPoint: -71, boilingPoint: -61.70,
+    discoveryYear: 1900, discoverer: "Friedrich Ernst Dorn",
+    uses: "Cancer treatment (historical), earthquake prediction, radiation research",
+    facts: "Second leading cause of lung cancer after smoking. Naturally seeps from ground into basements.",
+    state: "Gas", natural: true, radioactive: true, gridColumn: 18, gridRow: 6
+  },
+  {
+    atomicNumber: 87, symbol: "Fr", name: "Francium",
+    atomicMass: 223, category: "alkali-metal", group: 1, period: 7,
+    electronConfiguration: "[Rn] 7s¹",
+    electronegativity: 0.70, density: 1.87, meltingPoint: 21, boilingPoint: 650,
+    discoveryYear: 1939, discoverer: "Marguerite Perey",
+    uses: "Scientific research only (extremely rare)",
+    facts: "Second rarest naturally occurring element. Most unstable natural element. At any time, less than 30g on Earth.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 1, gridRow: 7
+  },
+  {
+    atomicNumber: 88, symbol: "Ra", name: "Radium",
+    atomicMass: 226, category: "alkaline-earth-metal", group: 2, period: 7,
+    electronConfiguration: "[Rn] 7s²",
+    electronegativity: 0.90, density: 5.5, meltingPoint: 700, boilingPoint: 1737,
+    discoveryYear: 1898, discoverer: "Marie & Pierre Curie",
+    uses: "Cancer treatment (historical), luminescent paint (historical), neutron sources",
+    facts: "Discovered by Marie Curie, gave name to 'radioactivity'. Glows faint blue in the dark.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 2, gridRow: 7
+  },
+  {
+    atomicNumber: 89, symbol: "Ac", name: "Actinium",
+    atomicMass: 227, category: "actinide", group: 3, period: 7,
+    electronConfiguration: "[Rn] 6d¹ 7s²",
+    electronegativity: 1.10, density: 10.07, meltingPoint: 1050, boilingPoint: 3198,
+    discoveryYear: 1899, discoverer: "André-Louis Debierne",
+    uses: "Cancer treatment (Ac-225 in targeted alpha therapy), neutron sources",
+    facts: "Glows a bright blue in the dark due to ionization of air. Gives name to 'actinide' series.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 3, gridRow: 10
+  },
+  {
+    atomicNumber: 90, symbol: "Th", name: "Thorium",
+    atomicMass: 232.04, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 6d² 7s²",
+    electronegativity: 1.30, density: 11.72, meltingPoint: 1750, boilingPoint: 4788,
+    discoveryYear: 1828, discoverer: "Jöns Jacob Berzelius",
+    uses: "Nuclear fuel alternative, gas mantles (camping lanterns), alloys, refractory ceramics",
+    facts: "Named after Thor, Norse god of thunder. 3× more abundant than uranium. Could power the world with less waste.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 4, gridRow: 10
+  },
+  {
+    atomicNumber: 91, symbol: "Pa", name: "Protactinium",
+    atomicMass: 231.04, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f² 6d¹ 7s²",
+    electronegativity: 1.50, density: 15.37, meltingPoint: 1568, boilingPoint: 4027,
+    discoveryYear: 1913, discoverer: "Kasimir Fajans & Oswald Helmuth Göhring",
+    uses: "Scientific research only",
+    facts: "Second rarest naturally occurring actinide. Name means 'parent of actinium'.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 5, gridRow: 10
+  },
+  {
+    atomicNumber: 92, symbol: "U", name: "Uranium",
+    atomicMass: 238.03, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f³ 6d¹ 7s²",
+    electronegativity: 1.38, density: 19.1, meltingPoint: 1135, boilingPoint: 4131,
+    discoveryYear: 1789, discoverer: "Martin Heinrich Klaproth",
+    uses: "Nuclear fuel, nuclear weapons, depleted uranium for armor and ammunition, dating rocks",
+    facts: "Used in the atomic bombs dropped on Japan in 1945. Can generate electricity for 60,000 years from one kilogram.",
+    state: "Solid", natural: true, radioactive: true, gridColumn: 6, gridRow: 10
+  },
+  {
+    atomicNumber: 93, symbol: "Np", name: "Neptunium",
+    atomicMass: 237, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f⁴ 6d¹ 7s²",
+    electronegativity: 1.36, density: 20.2, meltingPoint: 637, boilingPoint: 4000,
+    discoveryYear: 1940, discoverer: "Edwin McMillan & Philip H. Abelson",
+    uses: "Neutron detection equipment, research",
+    facts: "First transuranium element to be synthesized. Named after planet Neptune (as uranium was named after Uranus).",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 7, gridRow: 10
+  },
+  {
+    atomicNumber: 94, symbol: "Pu", name: "Plutonium",
+    atomicMass: 244, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f⁶ 7s²",
+    electronegativity: 1.28, density: 19.85, meltingPoint: 640, boilingPoint: 3228,
+    discoveryYear: 1940, discoverer: "Glenn T. Seaborg et al.",
+    uses: "Nuclear weapons, nuclear power plants, spacecraft power (RTGs)",
+    facts: "Used in the 'Fat Man' bomb dropped on Nagasaki. Pu-238 powers the Voyager, New Horizons, and Curiosity.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 8, gridRow: 10
+  },
+  {
+    atomicNumber: 95, symbol: "Am", name: "Americium",
+    atomicMass: 243, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f⁷ 7s²",
+    electronegativity: 1.13, density: 13.69, meltingPoint: 1176, boilingPoint: 2607,
+    discoveryYear: 1944, discoverer: "Glenn T. Seaborg et al.",
+    uses: "Smoke detectors (Am-241), neutron sources, research",
+    facts: "Found in virtually every home's smoke detector. Named after the Americas. Glows faint blue in the dark.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 9, gridRow: 10
+  },
+  {
+    atomicNumber: 96, symbol: "Cm", name: "Curium",
+    atomicMass: 247, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f⁷ 6d¹ 7s²",
+    electronegativity: 1.28, density: 13.51, meltingPoint: 1345, boilingPoint: 3110,
+    discoveryYear: 1944, discoverer: "Glenn T. Seaborg et al.",
+    uses: "Space exploration (alpha particle X-ray spectrometers on Mars rovers), research",
+    facts: "Named after Marie and Pierre Curie. Used on Mars rovers to analyze soil composition.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 10, gridRow: 10
+  },
+  {
+    atomicNumber: 97, symbol: "Bk", name: "Berkelium",
+    atomicMass: 247, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f⁹ 7s²",
+    electronegativity: 1.30, density: 14.78, meltingPoint: 986, boilingPoint: null,
+    discoveryYear: 1949, discoverer: "Glenn T. Seaborg et al.",
+    uses: "Used as target material to synthesize heavier elements, research",
+    facts: "Named after Berkeley, California. Used as target to create tennessine (element 117).",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 11, gridRow: 10
+  },
+  {
+    atomicNumber: 98, symbol: "Cf", name: "Californium",
+    atomicMass: 251, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁰ 7s²",
+    electronegativity: 1.30, density: 15.1, meltingPoint: 900, boilingPoint: null,
+    discoveryYear: 1950, discoverer: "Glenn T. Seaborg et al.",
+    uses: "Startup neutron source for nuclear reactors, cancer treatment, gold/silver prospecting",
+    facts: "Most expensive element sold commercially (~$27 million per gram). Named after California state.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 12, gridRow: 10
+  },
+  {
+    atomicNumber: 99, symbol: "Es", name: "Einsteinium",
+    atomicMass: 252, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f¹¹ 7s²",
+    electronegativity: 1.30, density: 8.84, meltingPoint: 860, boilingPoint: 996,
+    discoveryYear: 1952, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Discovered in debris of first hydrogen bomb test. Named after Albert Einstein.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 13, gridRow: 10
+  },
+  {
+    atomicNumber: 100, symbol: "Fm", name: "Fermium",
+    atomicMass: 257, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f¹² 7s²",
+    electronegativity: 1.30, density: null, meltingPoint: 1527, boilingPoint: null,
+    discoveryYear: 1952, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Named after Enrico Fermi. Also found in nuclear bomb test debris. Heaviest element that can be produced by neutron bombardment.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 14, gridRow: 10
+  },
+  {
+    atomicNumber: 101, symbol: "Md", name: "Mendelevium",
+    atomicMass: 258, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f¹³ 7s²",
+    electronegativity: 1.30, density: null, meltingPoint: 827, boilingPoint: null,
+    discoveryYear: 1955, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Named after Dmitri Mendeleev, creator of the periodic table. First element made one atom at a time.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 15, gridRow: 10
+  },
+  {
+    atomicNumber: 102, symbol: "No", name: "Nobelium",
+    atomicMass: 259, category: "actinide", group: null, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 7s²",
+    electronegativity: 1.30, density: null, meltingPoint: 827, boilingPoint: null,
+    discoveryYear: 1958, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Named after Alfred Nobel. Claimed by scientists from three different countries, causing naming controversy.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 16, gridRow: 10
+  },
+  {
+    atomicNumber: 103, symbol: "Lr", name: "Lawrencium",
+    atomicMass: 266, category: "actinide", group: 3, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 7s² 7p¹",
+    electronegativity: 1.30, density: null, meltingPoint: 1627, boilingPoint: null,
+    discoveryYear: 1961, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Named after Ernest Lawrence, inventor of the cyclotron. Last actinide element.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 17, gridRow: 10
+  },
+  {
+    atomicNumber: 104, symbol: "Rf", name: "Rutherfordium",
+    atomicMass: 267, category: "transition-metal", group: 4, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d² 7s²",
+    electronegativity: null, density: 23.2, meltingPoint: 2100, boilingPoint: 5500,
+    discoveryYear: 1964, discoverer: "Albert Ghiorso et al. / Georgy Flerov et al.",
+    uses: "Research only",
+    facts: "Named after Ernest Rutherford. First transactinide element. Discovery disputed between USA and USSR.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 4, gridRow: 7
+  },
+  {
+    atomicNumber: 105, symbol: "Db", name: "Dubnium",
+    atomicMass: 268, category: "transition-metal", group: 5, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d³ 7s²",
+    electronegativity: null, density: 29.3, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1968, discoverer: "Albert Ghiorso et al. / Georgy Flerov et al.",
+    uses: "Research only",
+    facts: "Named after Dubna, Russia. Like Rutherfordium, its discovery was disputed between USA and USSR.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 5, gridRow: 7
+  },
+  {
+    atomicNumber: 106, symbol: "Sg", name: "Seaborgium",
+    atomicMass: 269, category: "transition-metal", group: 6, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d⁴ 7s²",
+    electronegativity: null, density: 35, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1974, discoverer: "Albert Ghiorso et al.",
+    uses: "Research only",
+    facts: "Named after Glenn T. Seaborg, the only person to have an element named after them while still alive.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 6, gridRow: 7
+  },
+  {
+    atomicNumber: 107, symbol: "Bh", name: "Bohrium",
+    atomicMass: 270, category: "transition-metal", group: 7, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d⁵ 7s²",
+    electronegativity: null, density: 37.1, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1981, discoverer: "Peter Armbruster & Gottfried Münzenberg",
+    uses: "Research only",
+    facts: "Named after Niels Bohr. Half-life of most stable isotope is 61 seconds.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 7, gridRow: 7
+  },
+  {
+    atomicNumber: 108, symbol: "Hs", name: "Hassium",
+    atomicMass: 277, category: "transition-metal", group: 8, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d⁶ 7s²",
+    electronegativity: null, density: 40.7, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1984, discoverer: "Peter Armbruster & Gottfried Münzenberg",
+    uses: "Research only",
+    facts: "Named after the German state Hessen. Only 9 atoms have ever been observed.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 8, gridRow: 7
+  },
+  {
+    atomicNumber: 109, symbol: "Mt", name: "Meitnerium",
+    atomicMass: 278, category: "transition-metal", group: 9, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d⁷ 7s²",
+    electronegativity: null, density: 37.4, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1982, discoverer: "Peter Armbruster & Gottfried Münzenberg",
+    uses: "Research only",
+    facts: "Named after Lise Meitner, physicist who helped discover nuclear fission. Only 10 atoms have been made.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 9, gridRow: 7
+  },
+  {
+    atomicNumber: 110, symbol: "Ds", name: "Darmstadtium",
+    atomicMass: 281, category: "transition-metal", group: 10, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d⁸ 7s²",
+    electronegativity: null, density: 34.8, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1994, discoverer: "Peter Armbruster & Gottfried Münzenberg",
+    uses: "Research only",
+    facts: "Named after Darmstadt, Germany where it was discovered. Only a few atoms have ever been created.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 10, gridRow: 7
+  },
+  {
+    atomicNumber: 111, symbol: "Rg", name: "Roentgenium",
+    atomicMass: 282, category: "transition-metal", group: 11, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s¹",
+    electronegativity: null, density: 28.7, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1994, discoverer: "Peter Armbruster & Gottfried Münzenberg",
+    uses: "Research only",
+    facts: "Named after Wilhelm Röntgen, discoverer of X-rays. Most stable isotope has half-life of 26 seconds.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 11, gridRow: 7
+  },
+  {
+    atomicNumber: 112, symbol: "Cn", name: "Copernicium",
+    atomicMass: 285, category: "transition-metal", group: 12, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s²",
+    electronegativity: null, density: 23.7, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1996, discoverer: "Sigurd Hofmann & Victor Ninov",
+    uses: "Research only",
+    facts: "Named after Nicolaus Copernicus. May be a liquid or gas at room temperature due to relativistic effects.",
+    state: "Gas", natural: false, radioactive: true, gridColumn: 12, gridRow: 7
+  },
+  {
+    atomicNumber: 113, symbol: "Nh", name: "Nihonium",
+    atomicMass: 286, category: "post-transition-metal", group: 13, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹",
+    electronegativity: null, density: 16, meltingPoint: 430, boilingPoint: 1130,
+    discoveryYear: 2004, discoverer: "Kosuke Morita et al.",
+    uses: "Research only",
+    facts: "Named after Japan (Nihon = Japan in Japanese). First element discovered in Asia.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 13, gridRow: 7
+  },
+  {
+    atomicNumber: 114, symbol: "Fl", name: "Flerovium",
+    atomicMass: 289, category: "post-transition-metal", group: 14, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²",
+    electronegativity: null, density: 14, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 1998, discoverer: "Georgy Flerov et al.",
+    uses: "Research only",
+    facts: "Named after Flerov Laboratory of Nuclear Reactions. May behave like a noble gas due to relativistic effects.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 14, gridRow: 7
+  },
+  {
+    atomicNumber: 115, symbol: "Mc", name: "Moscovium",
+    atomicMass: 290, category: "post-transition-metal", group: 15, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³",
+    electronegativity: null, density: 13.5, meltingPoint: 400, boilingPoint: 1100,
+    discoveryYear: 2003, discoverer: "Joint team (JINR and LLNL)",
+    uses: "Research only",
+    facts: "Named after Moscow Oblast. Decays within milliseconds of creation.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 15, gridRow: 7
+  },
+  {
+    atomicNumber: 116, symbol: "Lv", name: "Livermorium",
+    atomicMass: 293, category: "post-transition-metal", group: 16, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴",
+    electronegativity: null, density: 12.9, meltingPoint: 364, boilingPoint: 762,
+    discoveryYear: 2000, discoverer: "Joint team (JINR and LLNL)",
+    uses: "Research only",
+    facts: "Named after Lawrence Livermore National Laboratory. Synthesized in a joint Russian-American collaboration.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 16, gridRow: 7
+  },
+  {
+    atomicNumber: 117, symbol: "Ts", name: "Tennessine",
+    atomicMass: 294, category: "halogen", group: 17, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵",
+    electronegativity: null, density: 7.2, meltingPoint: 350, boilingPoint: 610,
+    discoveryYear: 2010, discoverer: "Joint team (JINR and US institutions)",
+    uses: "Research only",
+    facts: "Named after Tennessee, home to Oak Ridge, Vanderbilt University, and UT. Heaviest halogen.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 17, gridRow: 7
+  },
+  {
+    atomicNumber: 118, symbol: "Og", name: "Oganesson",
+    atomicMass: 294, category: "noble-gas", group: 18, period: 7,
+    electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶",
+    electronegativity: null, density: 4.9, meltingPoint: null, boilingPoint: null,
+    discoveryYear: 2002, discoverer: "Joint team (JINR and LLNL)",
+    uses: "Research only",
+    facts: "Named after nuclear physicist Yuri Oganessian. Heaviest known element. May not be a noble gas due to relativistic effects.",
+    state: "Solid", natural: false, radioactive: true, gridColumn: 18, gridRow: 7
+  }
+];
+
+// Category metadata
+const CATEGORIES = {
+  "alkali-metal": { label: "Alkali Metals", color: "#ef4444" },
+  "alkaline-earth-metal": { label: "Alkaline Earth Metals", color: "#f97316" },
+  "transition-metal": { label: "Transition Metals", color: "#eab308" },
+  "post-transition-metal": { label: "Post-transition Metals", color: "#84cc16" },
+  "metalloid": { label: "Metalloids", color: "#22c55e" },
+  "nonmetal": { label: "Nonmetals", color: "#06b6d4" },
+  "halogen": { label: "Halogens", color: "#6366f1" },
+  "noble-gas": { label: "Noble Gases", color: "#a855f7" },
+  "lanthanide": { label: "Lanthanides", color: "#ec4899" },
+  "actinide": { label: "Actinides", color: "#f43f5e" }
+};
+
+// ── STATE ──────────────────────────────────────────────────────
+const state = {
+  currentFilter: 'all',
+  searchQuery: '',
+  favorites: JSON.parse(localStorage.getItem('benn-favorites') || '[]'),
+  theme: localStorage.getItem('benn-theme') || 'dark',
+  modalOpen: false,
+  currentElementIndex: 0,
+  shortcutsOpen: false,
+};
+
+function getEotdNumber() {
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  return (dayOfYear % 118) + 1;
+}
+
+const $ = id => document.getElementById(id);
+const loader          = $('loader');
+const periodicGrid    = $('periodic-grid');
+const lanthanideCells = $('lanthanide-cells');
+const actinideCells   = $('actinide-cells');
+const legendGrid      = $('legend-grid');
+const searchInput     = $('search-input');
+const btnClearSearch  = $('btn-clear-search');
+const filterBtns      = document.querySelectorAll('.filter-btn');
+const modalBackdrop   = $('modal-backdrop');
+const modalCard       = $('modal-card');
+const modalHeader     = $('modal-header');
+const btnTheme        = $('btn-theme');
+const btnRandom       = $('btn-random');
+const btnFullscreen   = $('btn-fullscreen');
+const btnShortcuts    = $('btn-shortcuts');
+const shortcutsPanel  = $('shortcuts-panel');
+const toast           = $('toast');
+const btnEotdView     = $('btn-eotd-view');
+const modalAtomicNum  = $('modal-atomic-num');
+const modalSymbol     = $('modal-symbol');
+const modalMass       = $('modal-mass');
+const modalElementName= $('modal-element-name');
+const modalCatBadge   = $('modal-category-badge');
+const modalStateBadge = $('modal-state-badge');
+const modalNatBadge   = $('modal-natural-badge');
+const modalRadBadge   = $('modal-radioactive-badge');
+const modalBtnFav     = $('modal-btn-fav');
+const modalBtnCopy    = $('modal-btn-copy');
+const modalBtnPrint   = $('modal-btn-print');
+const modalBtnClose   = $('modal-btn-close');
+const propGroup       = $('prop-group');
+const propPeriod      = $('prop-period');
+const propEn          = $('prop-en');
+const propDensity     = $('prop-density');
+const propMelt        = $('prop-melt');
+const propBoil        = $('prop-boil');
+const propYear        = $('prop-year');
+const propDiscoverer  = $('prop-discoverer');
+const propEconfig     = $('prop-econfig');
+const propUses        = $('prop-uses');
+const propFacts       = $('prop-facts');
+const modalPrev       = $('modal-prev');
+const modalNext       = $('modal-next');
+const modalNavCounter = $('modal-nav-counter');
+const statTotal       = $('stat-total');
+const statMetals      = $('stat-metals');
+const statNonmetals   = $('stat-nonmetals');
+const statMetalloids  = $('stat-metalloids');
+const statRadioactive = $('stat-radioactive');
+const statSynthetic   = $('stat-synthetic');
+const eotdSymbol      = $('eotd-symbol');
+const eotdName        = $('eotd-name');
+const eotdFact        = $('eotd-fact');
+
+function fmt(val) {
+  if (val === null || val === undefined) return '—';
+  if (typeof val === 'string') return val;
+  return val.toString();
+}
+
+function catLabel(slug) { return CATEGORIES[slug]?.label || slug; }
+function catColor(slug) { return CATEGORIES[slug]?.color || '#6366f1'; }
+
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function addRipple(card, e) {
+  const rect = card.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.classList.add('ripple');
+  r.style.left = (e.clientX - rect.left - 30) + 'px';
+  r.style.top  = (e.clientY - rect.top  - 30) + 'px';
+  card.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  state.theme = theme;
+  localStorage.setItem('benn-theme', theme);
+  btnTheme.querySelector('i').className = theme === 'dark' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+}
+
+function toggleTheme() { applyTheme(state.theme === 'dark' ? 'light' : 'dark'); }
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+    btnFullscreen.querySelector('i').className = 'bi bi-fullscreen-exit';
+  } else {
+    document.exitFullscreen().catch(() => {});
+    btnFullscreen.querySelector('i').className = 'bi bi-fullscreen';
+  }
+}
+
+function buildCard(el) {
+  const card = document.createElement('div');
+  card.classList.add('element-card');
+  card.dataset.atomicNumber = el.atomicNumber;
+  card.dataset.category = el.category;
+  const color = catColor(el.category);
+  card.style.setProperty('--cat-color', color);
+  if (el.radioactive) card.classList.add('radioactive-card');
+  if (state.favorites.includes(el.atomicNumber)) card.classList.add('favorites-marked');
+  card.innerHTML = `
+    <span class="el-number">${el.atomicNumber}</span>
+    <span class="el-symbol">${el.symbol}</span>
+    <span class="el-name">${el.name}</span>
+    <span class="el-mass">${typeof el.atomicMass === 'number' ? el.atomicMass.toFixed(el.atomicMass % 1 === 0 ? 0 : 3) : el.atomicMass}</span>
+  `;
+  card.addEventListener('click', e => {
+    addRipple(card, e);
+    openModal(ELEMENTS.findIndex(x => x.atomicNumber === el.atomicNumber));
+  });
+  return card;
+}
+
+function renderTable() {
+  periodicGrid.querySelectorAll('.element-card').forEach(c => c.remove());
+  lanthanideCells.innerHTML = '';
+  actinideCells.innerHTML   = '';
+  ELEMENTS.forEach(el => {
+    const card = buildCard(el);
+    if (el.category === 'lanthanide') {
+      lanthanideCells.appendChild(card);
+    } else if (el.category === 'actinide') {
+      actinideCells.appendChild(card);
+    } else {
+      card.style.gridColumn = el.gridColumn;
+      card.style.gridRow    = el.gridRow + 1;
+      periodicGrid.appendChild(card);
+    }
+  });
+}
+
+function buildLegend() {
+  legendGrid.innerHTML = '';
+  Object.entries(CATEGORIES).forEach(([slug, meta]) => {
+    const item = document.createElement('div');
+    item.classList.add('legend-item');
+    item.dataset.filter = slug;
+    item.innerHTML = `<span class="legend-dot" style="background:${meta.color}"></span>${meta.label}`;
+    item.addEventListener('click', () => setFilter(slug === state.currentFilter ? 'all' : slug));
+    legendGrid.appendChild(item);
+  });
+}
+
+function renderStats() {
+  const metals = ELEMENTS.filter(e => ['alkali-metal','alkaline-earth-metal','transition-metal','post-transition-metal','lanthanide','actinide'].includes(e.category)).length;
+  const nonmetals  = ELEMENTS.filter(e => ['nonmetal','halogen','noble-gas'].includes(e.category)).length;
+  const metalloids = ELEMENTS.filter(e => e.category === 'metalloid').length;
+  statTotal.textContent       = ELEMENTS.length;
+  statMetals.textContent      = metals;
+  statNonmetals.textContent   = nonmetals;
+  statMetalloids.textContent  = metalloids;
+  statRadioactive.textContent = ELEMENTS.filter(e => e.radioactive).length;
+  statSynthetic.textContent   = ELEMENTS.filter(e => !e.natural).length;
+}
+
+function renderEotd() {
+  const el = ELEMENTS.find(e => e.atomicNumber === getEotdNumber()) || ELEMENTS[78];
+  eotdSymbol.textContent = el.symbol;
+  eotdName.textContent   = el.name;
+  eotdFact.textContent   = el.facts;
+  eotdSymbol.style.cssText = `background:linear-gradient(135deg,${catColor(el.category)},#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
+  btnEotdView.addEventListener('click', () => openModal(ELEMENTS.findIndex(e => e.atomicNumber === el.atomicNumber)));
+}
+
+function handleSearch(q) {
+  state.searchQuery = q.trim().toLowerCase();
+  btnClearSearch.classList.toggle('visible', state.searchQuery.length > 0);
+  applyVisibility();
+}
+
+function setFilter(filter) {
+  state.currentFilter = filter;
+  filterBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
+  document.querySelectorAll('.legend-item').forEach(item => {
+    const active = item.dataset.filter === filter;
+    item.classList.toggle('active', active);
+    item.style.background   = active ? catColor(filter) : '';
+    item.style.borderColor  = active ? catColor(filter) : '';
+    item.style.color        = active ? '#fff' : '';
+  });
+  applyVisibility();
+}
+
+function applyVisibility() {
+  const q = state.searchQuery, filter = state.currentFilter;
+  document.querySelectorAll('.element-card').forEach(card => {
+    const el = ELEMENTS.find(e => e.atomicNumber === parseInt(card.dataset.atomicNumber));
+    if (!el) return;
+    let sm = true;
+    if (q) {
+      const nq = parseInt(q);
+      sm = el.name.toLowerCase().includes(q) || el.symbol.toLowerCase().includes(q) || (!isNaN(nq) && el.atomicNumber === nq);
+    }
+    let fm = true;
+    if (filter !== 'all') {
+      if (filter === 'radioactive') fm = el.radioactive;
+      else if (filter === 'synthetic') fm = !el.natural;
+      else if (filter === 'favorites') fm = state.favorites.includes(el.atomicNumber);
+      else fm = el.category === filter;
+    }
+    const visible = sm && fm;
+    const anyActive = q.length > 0 || filter !== 'all';
+    card.classList.toggle('highlighted', visible && anyActive);
+    card.classList.toggle('dimmed', !visible && anyActive);
+    if (!anyActive) card.classList.remove('highlighted','dimmed');
+  });
+}
+
+function openRandomElement() {
+  const idx = Math.floor(Math.random() * ELEMENTS.length);
+  openModal(idx);
+  showToast('🎲 Random: ' + ELEMENTS[idx].name);
+}
+
+function openModal(index) {
+  state.currentElementIndex = index;
+  state.modalOpen = true;
+  populateModal(ELEMENTS[index]);
+  modalBackdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  state.modalOpen = false;
+  modalBackdrop.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function populateModal(el) {
+  const color = catColor(el.category);
+  modalHeader.style.setProperty('--cat-color', color);
+  modalSymbol.style.color    = color;
+  modalAtomicNum.textContent = el.atomicNumber;
+  modalSymbol.textContent    = el.symbol;
+  modalMass.textContent      = fmt(el.atomicMass);
+  modalElementName.textContent   = el.name;
+  modalCatBadge.textContent      = catLabel(el.category);
+  modalCatBadge.style.background = color;
+  const si = { Solid:'🪨', Liquid:'💧', Gas:'💨' };
+  modalStateBadge.textContent = (si[el.state] || '') + ' ' + el.state;
+  modalNatBadge.textContent   = el.natural ? '🌍 Natural' : '⚗️ Synthetic';
+  if (el.radioactive) { modalRadBadge.textContent = '☢️ Radioactive'; modalRadBadge.classList.add('active'); }
+  else { modalRadBadge.textContent = '✅ Stable'; modalRadBadge.classList.remove('active'); }
+  updateFavBtn(el.atomicNumber);
+  propGroup.textContent      = el.group ?? '—';
+  propPeriod.textContent     = el.period ?? '—';
+  propEn.textContent         = el.electronegativity ?? '—';
+  propDensity.textContent    = el.density != null ? el.density + ' g/cm³' : '—';
+  propMelt.textContent       = el.meltingPoint != null ? el.meltingPoint + ' °C' : '—';
+  propBoil.textContent       = el.boilingPoint != null ? el.boilingPoint + ' °C' : '—';
+  propYear.textContent       = el.discoveryYear ?? '—';
+  propDiscoverer.textContent = el.discoverer ?? '—';
+  propEconfig.textContent    = el.electronConfiguration;
+  propUses.textContent       = el.uses;
+  propFacts.textContent      = el.facts;
+  modalNavCounter.textContent = el.atomicNumber + ' / 118';
+  modalPrev.style.opacity = state.currentElementIndex <= 0 ? '0.35' : '1';
+  modalNext.style.opacity = state.currentElementIndex >= ELEMENTS.length - 1 ? '0.35' : '1';
+  modalCard.scrollTop = 0;
+}
+
+function updateFavBtn(num) {
+  const isFav = state.favorites.includes(num);
+  modalBtnFav.querySelector('i').className = isFav ? 'bi bi-heart-fill' : 'bi bi-heart';
+  modalBtnFav.classList.toggle('faved', isFav);
+}
+
+function toggleFavorite(num) {
+  const idx = state.favorites.indexOf(num);
+  if (idx === -1) { state.favorites.push(num); showToast('❤️ Added to favorites'); }
+  else { state.favorites.splice(idx, 1); showToast('💔 Removed from favorites'); }
+  localStorage.setItem('benn-favorites', JSON.stringify(state.favorites));
+  updateFavBtn(num);
+  document.querySelectorAll('.element-card').forEach(card => {
+    const n = parseInt(card.dataset.atomicNumber);
+    card.classList.toggle('favorites-marked', state.favorites.includes(n));
+  });
+  if (state.currentFilter === 'favorites') applyVisibility();
+}
+
+function copyElementInfo() {
+  const el = ELEMENTS[state.currentElementIndex];
+  const text = `Element: ${el.name} (${el.symbol})\nAtomic Number: ${el.atomicNumber}\nAtomic Mass: ${el.atomicMass}\nCategory: ${catLabel(el.category)}\nGroup: ${el.group??'—'} | Period: ${el.period}\nElectron Config: ${el.electronConfiguration}\nElectronegativity: ${el.electronegativity??'—'}\nDensity: ${el.density??'—'} g/cm³\nMelting Point: ${el.meltingPoint??'—'} °C\nBoiling Point: ${el.boilingPoint??'—'} °C\nState: ${el.state} | Natural: ${el.natural?'Yes':'No'} | Radioactive: ${el.radioactive?'Yes':'No'}\nDiscovered: ${el.discoveryYear} by ${el.discoverer}\nUses: ${el.uses}\nFacts: ${el.facts}\n— Benn Periodic Table Explorer`;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied!')).catch(() => showToast('❌ Copy failed'));
+}
+
+function toggleShortcuts() {
+  state.shortcutsOpen = !state.shortcutsOpen;
+  shortcutsPanel.classList.toggle('open', state.shortcutsOpen);
+}
+
+function handleKeydown(e) {
+  const inInput = document.activeElement.tagName === 'INPUT';
+  if (e.key === 'Escape') {
+    if (state.modalOpen) { closeModal(); return; }
+    if (state.shortcutsOpen) { toggleShortcuts(); return; }
+    if (state.searchQuery) { searchInput.value = ''; handleSearch(''); return; }
+  }
+  if (inInput) return;
+  if (e.key === 't' || e.key === 'T') toggleTheme();
+  if (e.key === 'r' || e.key === 'R') openRandomElement();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === '?') toggleShortcuts();
+  if (e.key === '/') { e.preventDefault(); searchInput.focus(); }
+  if (e.key === 'ArrowLeft'  && state.modalOpen && state.currentElementIndex > 0) openModal(state.currentElementIndex - 1);
+  if (e.key === 'ArrowRight' && state.modalOpen && state.currentElementIndex < ELEMENTS.length - 1) openModal(state.currentElementIndex + 1);
+}
+
+function bindEvents() {
+  btnTheme.addEventListener('click', toggleTheme);
+  btnRandom.addEventListener('click', openRandomElement);
+  btnFullscreen.addEventListener('click', toggleFullscreen);
+  btnShortcuts.addEventListener('click', toggleShortcuts);
+  document.addEventListener('click', e => {
+    if (state.shortcutsOpen && !shortcutsPanel.contains(e.target) && e.target !== btnShortcuts) toggleShortcuts();
+  });
+  searchInput.addEventListener('input', e => handleSearch(e.target.value));
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && state.searchQuery) {
+      const match = ELEMENTS.find(el => el.name.toLowerCase().includes(state.searchQuery) || el.symbol.toLowerCase() === state.searchQuery || el.atomicNumber === parseInt(state.searchQuery));
+      if (match) openModal(ELEMENTS.findIndex(e => e.atomicNumber === match.atomicNumber));
+    }
+  });
+  btnClearSearch.addEventListener('click', () => { searchInput.value = ''; handleSearch(''); searchInput.focus(); });
+  filterBtns.forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter === state.currentFilter ? 'all' : btn.dataset.filter)));
+  modalBtnClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
+  modalPrev.addEventListener('click', () => { if (state.currentElementIndex > 0) openModal(state.currentElementIndex - 1); });
+  modalNext.addEventListener('click', () => { if (state.currentElementIndex < ELEMENTS.length - 1) openModal(state.currentElementIndex + 1); });
+  modalBtnFav.addEventListener('click', () => toggleFavorite(ELEMENTS[state.currentElementIndex].atomicNumber));
+  modalBtnCopy.addEventListener('click', copyElementInfo);
+  modalBtnPrint.addEventListener('click', () => { window.print(); showToast('🖨️ Print dialog opened'); });
+  document.addEventListener('keydown', handleKeydown);
+  let tx = 0;
+  modalCard.addEventListener('touchstart', e => { tx = e.changedTouches[0].clientX; }, { passive: true });
+  modalCard.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) < 50) return;
+    if (dx < 0 && state.currentElementIndex < ELEMENTS.length - 1) openModal(state.currentElementIndex + 1);
+    else if (dx > 0 && state.currentElementIndex > 0) openModal(state.currentElementIndex - 1);
+  }, { passive: true });
+}
+
+function init() {
+  applyTheme(state.theme);
+  renderStats();
+  buildLegend();
+  renderTable();
+  renderEotd();
+  bindEvents();
+  // Hide loader immediately after everything is rendered
+  if (loader) loader.style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
